@@ -1,2 +1,7 @@
-public class MainThread {
+public class MainThread
+{
+    public static void main(String [] args)
+    {
+
+    }
 }
