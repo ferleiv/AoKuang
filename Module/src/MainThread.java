@@ -23,6 +23,12 @@ public class MainThread
     private int[] memoriaPrincipalDatos;
     private int[] memoriaPrincipalInstrucciones;
     private List<Contexto> contextoList;
+    private boolean busDatos=true;
+    private boolean busInstrucciones=true;
+    private List<BloqueCacheDatos> cacheDatosNucleo0;
+    private List<BloqueCacheDatos> cacheDatosNucleo1;
+    private List<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
+    private List<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
 
     public MainThread() {
         memoriaPrincipalDatos = new int[96];
@@ -33,6 +39,10 @@ public class MainThread
         for (int i = 0; i < memoriaPrincipalDatos.length; i++)
             memoriaPrincipalDatos[i] = 1;
         contextoList = new ArrayList<Contexto>();
+        cacheDatosNucleo0 = new ArrayList<BloqueCacheDatos>();
+        cacheDatosNucleo1 = new ArrayList<BloqueCacheDatos>();
+        cacheInstruccionesNucleo0 = new ArrayList<BloqueCacheInstrucciones>();
+        cacheInstruccionesNucleo1 = new ArrayList<BloqueCacheInstrucciones>();
     }
 
     private int leerHilillos (String ruta, int posicionMemInstr){
