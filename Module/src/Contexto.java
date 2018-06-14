@@ -5,7 +5,9 @@ public class Contexto
 {
     private int ID, PC;
     private int[] registros;
-    private String Cache;
+    private int Cache; /* 0 = Nucleo 0
+                          1 = Nucleo 1 */
+
     private int estado; /* 0 = Bien,
                            1 = Fallo Datos,
                            2 = Fallo Instrucciones */
@@ -54,12 +56,12 @@ public class Contexto
         registros = nRegs;
     }
 
-    public String getCache()
+    public int getCache()
     {
         return Cache;
     }
 
-    public void setCache(String nCache)
+    public void setCache(int nCache)
     {
         Cache = nCache;
     }
