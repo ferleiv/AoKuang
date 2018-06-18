@@ -11,13 +11,13 @@ public class MainThread
     {
         MainThread mainThread = new MainThread();
         int posicion=0;
-        posicion=mainThread.leerHilillos("C:\\Users\\pjmq2\\Documents\\MEGAsync\\UCR\\Informatica\\CI-1323 Arquitectura de Computadores\\Proyecto\\AoKuang\\Module\\Hilillos\\0.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\pjmq2\\Documents\\MEGAsync\\UCR\\Informatica\\CI-1323 Arquitectura de Computadores\\Proyecto\\AoKuang\\Module\\Hilillos\\1.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\pjmq2\\Documents\\MEGAsync\\UCR\\Informatica\\CI-1323 Arquitectura de Computadores\\Proyecto\\AoKuang\\Module\\Hilillos\\2.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\pjmq2\\Documents\\MEGAsync\\UCR\\Informatica\\CI-1323 Arquitectura de Computadores\\Proyecto\\AoKuang\\Module\\Hilillos\\3.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\pjmq2\\Documents\\MEGAsync\\UCR\\Informatica\\CI-1323 Arquitectura de Computadores\\Proyecto\\AoKuang\\Module\\Hilillos\\4.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\pjmq2\\Documents\\MEGAsync\\UCR\\Informatica\\CI-1323 Arquitectura de Computadores\\Proyecto\\AoKuang\\Module\\Hilillos\\5.txt",posicion);
-
+        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\0.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\1.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\2.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\3.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\4.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\5.txt",posicion);
+        mainThread.empezar();
     }
 
     private int[] memoriaPrincipalDatos;
@@ -29,6 +29,7 @@ public class MainThread
     private List<BloqueCacheDatos> cacheDatosNucleo1;
     private List<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
     private List<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
+    private Nucleo N0;
 
     public MainThread() {
         memoriaPrincipalDatos = new int[96];
@@ -43,6 +44,7 @@ public class MainThread
         cacheDatosNucleo1 = new ArrayList<BloqueCacheDatos>();
         cacheInstruccionesNucleo0 = new ArrayList<BloqueCacheInstrucciones>();
         cacheInstruccionesNucleo1 = new ArrayList<BloqueCacheInstrucciones>();
+        N0 = new Nucleo(0, this);
     }
 
     private int leerHilillos (String ruta, int posicionMemInstr){
@@ -72,5 +74,9 @@ public class MainThread
         }
         contextoList.add(contexto);
         return posicionMemInstr;
+    }
+
+    private void empezar(){
+        N0.procesar(contextoList.get(4));
     }
 }
