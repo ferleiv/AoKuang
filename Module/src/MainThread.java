@@ -77,6 +77,39 @@ public class MainThread
     }
 
     private void empezar(){
-        N0.procesar(contextoList.get(4));
+        N0.procesar(contextoList.get(1));
+    }
+
+    public int[] getInstructionFromMem(int memPosition){
+        int[] instruction = new int[4];
+        for (int i = 0; i < 4; i++)
+            instruction[i] = memoriaPrincipalInstrucciones[memPosition++];
+        return instruction;
+    }
+
+    public int[] getInstructionFromCache(int memPosition){
+        int[] instruction = new int[4];
+        for (int i = 0; i < 4; i++)
+            instruction[i] = memoriaPrincipalInstrucciones[memPosition++];
+        return instruction;
+    }
+
+    public int verifyCacheInstructionsCore0( int posicion, int numBloque ) {
+        BloqueCacheInstrucciones target = cacheInstruccionesNucleo0.get(posicion);
+        if ( target.getEtiqueta() == numBloque ) return 1;
+        return 0;
+    }
+
+    public void loadToCacheInstFromMem(int memPosition){
+        BloqueCacheInstrucciones newBloque = new BloqueCacheInstrucciones();
+        int numBloque = memPosition / 16;
+        int posBloque = memPosition % 16;
+        newBloque.setEtiqueta(numBloque);
+        int[][] instructionSet = new int[4][4];
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++) {
+                instructionSet[i][j] = memoriaPrincipalInstrucciones[memPosition];
+            }
+        cacheInstruccionesNucleo0.add( posBloque , newBloque);
     }
 }
