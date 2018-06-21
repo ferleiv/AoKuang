@@ -75,4 +75,8 @@ public class Contexto
     {
         estado = nEstado;
     }
+
+    public void setRegistro(int posicion, int valor){registros[posicion]=valor;}
+
+    public int getRegistro(int posicion){return registros[posicion];}
 }
