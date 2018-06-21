@@ -1,17 +1,23 @@
-public class Nucleo
+import java.util.ArrayList;
+
+public class Nucleo extends Thread
 {
     private int numNucleo;
-    private Contexto context;
+    private Contexto contexto;
 
     MainThread mainT;
     private int currentPC;
+    ArrayList<BloqueCacheDatos> cacheDatos;
+    ArrayList<BloqueCacheInstrucciones> cacheInstrucciones;
 
     public Nucleo(){}
 
-    public Nucleo(int numero)
+    public Nucleo(int numero, ArrayList<BloqueCacheDatos> cacheD, ArrayList<BloqueCacheInstrucciones> cacheI, Contexto cont)
     {
         numNucleo = numero;
-        //mainT = main;
+        cacheDatos = cacheD;
+        cacheInstrucciones = cacheI;
+        contexto = cont;
     }
 
     public Contexto procesar(Contexto contexto)
@@ -42,13 +48,13 @@ public class Nucleo
     }
 
     public void daddi(int[] ir){
-        int valor = context.getRegistro(ir[1])+ir[3];
-        context.setRegistro(ir[2],valor);
+        int valor = contexto.getRegistro(ir[1])+ir[3];
+        contexto.setRegistro(ir[2],valor);
     }
 
     public void dadd(int[] ir){
-        int valor = context.getRegistro(ir[1])+context.getRegistro(ir[2]);
-        context.setRegistro(ir[3],valor);
+        int valor = contexto.getRegistro(ir[1])+contexto.getRegistro(ir[2]);
+        contexto.setRegistro(ir[3],valor);
     }
 }
 
