@@ -11,7 +11,7 @@ public class Nucleo
     public Nucleo(int numero)
     {
         numNucleo = numero;
-        mainT = main;
+        //mainT = main;
     }
 
     public Contexto procesar(Contexto contexto)
@@ -28,6 +28,19 @@ public class Nucleo
         return contexto;
     }
 
+
+
+    public boolean checkearEnCache(){
+        int bloqueInstruccion = currentPC / 16;
+        int posicionCache = currentPC % 16;
+        //if ( mainT.verifyCacheInstructionsCore0(posicionCache, bloqueInstruccion) == 1 ) return true; //está en el caché
+        return false;
+    }
+
+    public void ejecutarInstruccion(){
+
+    }
+
     public void daddi(int[] ir){
         int valor = context.getRegistro(ir[1])+ir[3];
         context.setRegistro(ir[2],valor);
@@ -37,19 +50,5 @@ public class Nucleo
         int valor = context.getRegistro(ir[1])+context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
-
-    public boolean checkearEnCache(){
-        int bloqueInstruccion = currentPC / 16;
-        int posicionCache = currentPC % 16;
-        if ( mainT.verifyCacheInstructionsCore0(posicionCache, bloqueInstruccion) == 1 ) return true; //está en el caché
-        return false;
-    }
-
-    public void ejecutarInstruccion(){
-
-    }
-
-
-
 }
 
