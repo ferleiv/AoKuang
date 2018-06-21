@@ -44,6 +44,16 @@ public class MainThread
         cacheDatosNucleo1 = new ArrayList<BloqueCacheDatos>();
         cacheInstruccionesNucleo0 = new ArrayList<BloqueCacheInstrucciones>();
         cacheInstruccionesNucleo1 = new ArrayList<BloqueCacheInstrucciones>();
+        for (int i = 0; i < 4; i++) {
+            BloqueCacheInstrucciones bloqueIns1 = new BloqueCacheInstrucciones();
+            BloqueCacheInstrucciones bloqueIns2 = new BloqueCacheInstrucciones();
+            BloqueCacheDatos bloqueData1 = new BloqueCacheDatos();
+            BloqueCacheDatos bloqueData2 = new BloqueCacheDatos();
+            cacheInstruccionesNucleo0.add(bloqueIns1);
+            cacheInstruccionesNucleo1.add(bloqueIns2);
+            cacheDatosNucleo0.add(bloqueData1);
+            cacheDatosNucleo1.add(bloqueData2);
+        }
         N0 = new Nucleo(0, this);
     }
 
@@ -96,6 +106,7 @@ public class MainThread
 
     public int verifyCacheInstructionsCore0( int posicion, int numBloque ) {
         BloqueCacheInstrucciones target = cacheInstruccionesNucleo0.get(posicion);
+        System.out.print(posicion + "   " + numBloque + "   " + target.getEtiqueta() );
         if ( target.getEtiqueta() == numBloque ) return 1;
         return 0;
     }

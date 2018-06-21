@@ -29,12 +29,19 @@ public class Nucleo
 
     public boolean checkearEnCache(){
         int bloqueInstruccion = currentPC / 16;
-        int posicionCache = currentPC % 16;
-        if ( mainT.verifyCacheInstructionsCore0(posicionCache, bloqueInstruccion) == 1 ) return true; //está en el caché
+        int posicionCache = bloqueInstruccion % 4;
+        if ( mainT.verifyCacheInstructionsCore0(posicionCache, bloqueInstruccion) == 1 ) {
+            System.out.print("si está");
+            return true;
+        }
         return false;
     }
 
     public void ejecutarInstruccion(){
+
+    }
+
+    public void LW(int rd, int inm, int rf) {
 
     }
 
