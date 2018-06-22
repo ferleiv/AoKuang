@@ -5,23 +5,65 @@ public class Nucleo extends Thread
     private int numNucleo;
     private Contexto contexto;
 
-    MainThread mainT;
+    //MainThread mainT;
     private int currentPC;
     ArrayList<BloqueCacheDatos> cacheDatos;
     ArrayList<BloqueCacheInstrucciones> cacheInstrucciones;
 
     public Nucleo(){}
 
-    public Nucleo(int numero, ArrayList<BloqueCacheDatos> cacheD, ArrayList<BloqueCacheInstrucciones> cacheI, Contexto cont)
+    public void run()
+    {
+        Barrera();
+    }
+
+    public void Barrera()
+    {
+        MainThread.enBarrera++;
+        if(MainThread.enBarrera == 2)
+        {
+            System.out.println("Ahora somos 2");
+            MainThread.enBarrera = 0;
+            MainThread.semaforo.release(1);
+            Pasar();
+        }
+        else
+        {
+            System.out.println("Espero :(");
+            synchronized (MainThread.semaforo)
+            {
+                try
+                {
+                    MainThread.semaforo.acquire();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            Pasar();
+        }
+    }
+
+    public void Pasar()
+    {
+        System.out.println("Pasamos :)");
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Barrera();
+    }
+
+    public Nucleo(int numero, ArrayList<BloqueCacheDatos> cacheD, ArrayList<BloqueCacheInstrucciones> cacheI)
     {
         numNucleo = numero;
         cacheDatos = cacheD;
         cacheInstrucciones = cacheI;
-        contexto = cont;
     }
 
     public Contexto procesar(Contexto contexto)
     {
+        /*
         currentPC = contexto.getPC();
         if (checkearEnCache())
             ejecutarInstruccion();
@@ -34,7 +76,15 @@ public class Nucleo extends Thread
         return contexto;
     }
 
+    public Contexto getContexto()
+    {
+        return contexto;
+    }
 
+    public void setContexto(Contexto cont)
+    {
+        contexto = cont;
+    }
 
     public boolean checkearEnCache(){
         int bloqueInstruccion = currentPC / 16;

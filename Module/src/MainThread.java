@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class MainThread
 {
@@ -11,12 +12,12 @@ public class MainThread
     {
         MainThread mainThread = new MainThread();
         int posicion=0;
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\0.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\1.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\2.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\3.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\4.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\5.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\0.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\1.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\2.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\3.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\4.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\5.txt",posicion);
         mainThread.empezar();
     }
 
@@ -30,6 +31,8 @@ public class MainThread
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
     private Nucleo N0, N1;
+    public static Semaphore semaforo;
+    public static int enBarrera;
 
     public MainThread() {
         memoriaPrincipalDatos = new int[96];
@@ -46,6 +49,8 @@ public class MainThread
         cacheInstruccionesNucleo1 = new ArrayList<BloqueCacheInstrucciones>();
         N0 = new Nucleo(0, cacheDatosNucleo0, cacheInstruccionesNucleo0);
         N1 = new Nucleo(1, cacheDatosNucleo1, cacheInstruccionesNucleo1);
+        semaforo = new Semaphore(1);
+        enBarrera = 0;
     }
 
     private int leerHilillos (String ruta, int posicionMemInstr){
@@ -77,8 +82,11 @@ public class MainThread
         return posicionMemInstr;
     }
 
-    private void empezar(){
-        N0.procesar(contextoList.get(1));
+    private void empezar()
+    {
+        N0.start();
+        N1.start();
+        //N0.procesar(contextoList.get(1));
     }
 
     public int[] getInstructionFromMem(int memPosition){
