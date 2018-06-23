@@ -19,10 +19,16 @@ public class Nucleo extends Thread
 
     public void Barrera()
     {
+        try {
+            MainThread.aux.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         MainThread.enBarrera++;
         if(MainThread.enBarrera == 2)
         {
             System.out.println("Ahora somos 2");
+            MainThread.aux.release();
             MainThread.enBarrera = 0;
             MainThread.semaforo.release(1);
             Pasar();
@@ -30,6 +36,7 @@ public class Nucleo extends Thread
         else
         {
             System.out.println("Espero :(");
+            MainThread.aux.release();
             synchronized (MainThread.semaforo)
             {
                 try

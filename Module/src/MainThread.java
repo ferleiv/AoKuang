@@ -31,7 +31,7 @@ public class MainThread
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
     private Nucleo N0, N1;
-    public static Semaphore semaforo;
+    public static Semaphore semaforo, aux;
     public static int enBarrera;
 
     public MainThread() {
@@ -50,6 +50,7 @@ public class MainThread
         N0 = new Nucleo(0, cacheDatosNucleo0, cacheInstruccionesNucleo0);
         N1 = new Nucleo(1, cacheDatosNucleo1, cacheInstruccionesNucleo1);
         semaforo = new Semaphore(1);
+        aux = new Semaphore(1);
         enBarrera = 0;
     }
 
