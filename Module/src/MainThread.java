@@ -11,12 +11,12 @@ public class MainThread
     {
         MainThread mainThread = new MainThread();
         int posicion=0;
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\0.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\1.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\2.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\3.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\4.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\b04751\\IdeaProjects\\AoKuang\\Module\\Hilillos\\5.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\0.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\1.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\2.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\3.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\4.txt",posicion);
+        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\5.txt",posicion);
         mainThread.empezar();
     }
 
@@ -30,6 +30,7 @@ public class MainThread
     private List<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
     private List<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
     private Nucleo N0;
+    private BloqueCacheDatos invalid = new BloqueCacheDatos(); //Bloque de cache default para retornar en caso de fallo
 
     public MainThread() {
         memoriaPrincipalDatos = new int[96];
@@ -44,6 +45,7 @@ public class MainThread
         cacheDatosNucleo1 = new ArrayList<BloqueCacheDatos>();
         cacheInstruccionesNucleo0 = new ArrayList<BloqueCacheInstrucciones>();
         cacheInstruccionesNucleo1 = new ArrayList<BloqueCacheInstrucciones>();
+        //initCacheDatos(); //para inicializar cache datos con valores manualmente
         for (int i = 0; i < 4; i++) {
             BloqueCacheInstrucciones bloqueIns1 = new BloqueCacheInstrucciones();
             BloqueCacheInstrucciones bloqueIns2 = new BloqueCacheInstrucciones();
@@ -104,11 +106,18 @@ public class MainThread
         return instruction;
     }
 
-    public int verifyCacheInstructionsCore0( int posicion, int numBloque ) {
+    public boolean verifyCacheInstructionsCore0( int posicion, int numBloque ) {
         BloqueCacheInstrucciones target = cacheInstruccionesNucleo0.get(posicion);
         System.out.print(posicion + "   " + numBloque + "   " + target.getEtiqueta() );
-        if ( target.getEtiqueta() == numBloque ) return 1;
-        return 0;
+        if ( target.getEtiqueta() == numBloque ) return true;
+        return false;
+    }
+
+    public BloqueCacheDatos verifyCacheDatos( int posicion, int numBloque, int idNucleo ){
+        BloqueCacheDatos target = idNucleo == 0 ? cacheDatosNucleo0.get(posicion) : cacheDatosNucleo1.get(posicion);
+        System.out.print(posicion + "   " + numBloque + "   " + target.getEtiqueta() );
+        if ( target.getEtiqueta() == numBloque ) return target;
+        return invalid;
     }
 
     public void loadToCacheInstFromMem(int memPosition){
@@ -123,4 +132,16 @@ public class MainThread
             }
         cacheInstruccionesNucleo0.add( posBloque , newBloque);
     }
+
+    /* Crea bloques manualmente y los agrega a cache instrucciones */
+    /*public void initCacheDatos(){
+        BloqueCacheDatos bl1 = new BloqueCacheDatos(new int[]{4,12,-8,4}, 0, 1);
+        BloqueCacheDatos bl2 = new BloqueCacheDatos(new int[]{6,31,0,-2}, 5, 0);
+        BloqueCacheDatos bl3 = new BloqueCacheDatos(new int[]{14,-2,6,1}, 22, 2);
+        BloqueCacheDatos bl4 = new BloqueCacheDatos(new int[]{3,13,-4,9}, 19, 0);
+        cacheDatosNucleo0.add(bl1);
+        cacheDatosNucleo0.add(bl2);
+        cacheDatosNucleo0.add(bl3);
+        cacheDatosNucleo0.add(bl4);
+    }*/
 }
