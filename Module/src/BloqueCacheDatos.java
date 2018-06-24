@@ -7,7 +7,7 @@ public class BloqueCacheDatos {
         palabras = new int[4];
         for(int i = 0; i < 4; i++)
             palabras[i] = 0;
-        etiqueta = 0;
+        etiqueta = -1;
         estado = 0;
     }
 
