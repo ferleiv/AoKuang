@@ -1,25 +1,26 @@
 public class Nucleo
 {
     private int numNucleo;
-    private Contexto context;
 
     MainThread mainT;
     private int currentPC;
+    private Contexto contexto;
 
     public Nucleo(){}
 
-    public Nucleo(int numero)
+    public Nucleo(int numero, MainThread main)
     {
         numNucleo = numero;
-        //mainT = main;
+        mainT = main;
     }
 
     public Contexto procesar(Contexto contexto)
     {
-        currentPC = contexto.getPC();
-        if (checkearEnCache())
-            ejecutarInstruccion();
-        else mainT.loadToCacheInstFromMem(currentPC);
+        setContexto(contexto);
+        /*currentPC = contexto.getPC();
+        if (checkearEnCache())*/
+        //ejecutarInstruccion();
+        /*else mainT.loadToCacheInstFromMem(currentPC);*/
         /*int[] instruction = mainT.getInstructionFromMem(currentPC);
         for (int i = 0; i < 4; i++)
         {
@@ -28,27 +29,60 @@ public class Nucleo
         return contexto;
     }
 
+    public Contexto getContexto()
+    {
+        return contexto;
+    }
 
+    public void setContexto(Contexto cont)
+    {
+        contexto = cont;
+    }
 
     public boolean checkearEnCache(){
         int bloqueInstruccion = currentPC / 16;
-        int posicionCache = currentPC % 16;
-        //if ( mainT.verifyCacheInstructionsCore0(posicionCache, bloqueInstruccion) == 1 ) return true; //está en el caché
+        int posicionCache = bloqueInstruccion % 4;
+        if ( mainT.verifyCacheInstructionsCore0(posicionCache, bloqueInstruccion) == true ) {
+            System.out.print("si está");
+            return true;
+        }
         return false;
     }
 
-    public void ejecutarInstruccion(){
+    /*Método de prueba para probar LW*/
+    /*public void ejecutarInstruccion(){
+        LW(0, 11, 8);
+        SW(0, 11, 364);
+    }*/
 
+    public void LW(int rf, int rd, int inm) {
+        int dir_mem = contexto.getRegistro(rf) + inm;
+        int num_bloque = dir_mem / 16;
+        int pos_cache = num_bloque % 4;
+        BloqueCacheDatos target = mainT.verifyCacheDatos( pos_cache, num_bloque, numNucleo);
+        if (target.getEtiqueta() > -1 && target.getEstado() < 2 ) {
+            int num_palabra = ( dir_mem - ( num_bloque * 16 ) ) / 4;
+            contexto.setRegistro( rd, target.getPalabras()[num_palabra]);
+        } else fallo_cache();
     }
 
-    public void daddi(int[] ir){
-        int valor = context.getRegistro(ir[1])+ir[3];
-        context.setRegistro(ir[2],valor);
+    public void SW(int rd, int rf , int inm){
+        int dir_mem = contexto.getRegistro(rd) + inm;
+        int num_bloque = dir_mem / 16;
+        int pos_cache = num_bloque % 4;
+        BloqueCacheDatos target = mainT.verifyCacheDatos( pos_cache, num_bloque, numNucleo);
+        if (target.getEtiqueta() > -1 && target.getEstado() < 2 ) {
+            int num_palabra = ( dir_mem - ( num_bloque * 16 ) ) / 4;
+            int[] palabras = target.getPalabras();
+            palabras[num_palabra] = contexto.getRegistro(rf);
+            target.setPalabras(palabras);
+            target.setEstado(1);
+        } else fallo_cache();
     }
 
-    public void dadd(int[] ir){
-        int valor = context.getRegistro(ir[1])+context.getRegistro(ir[2]);
-        context.setRegistro(ir[3],valor);
+    /* Si hay fallo caché en LW o SW*/
+    public void fallo_cache(){
+        System.out.print("\nFallo de cache");
     }
 }
 
