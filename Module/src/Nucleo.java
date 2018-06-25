@@ -1,3 +1,5 @@
+import sun.applet.Main;
+
 import java.util.ArrayList;
 
 public class Nucleo extends Thread
@@ -20,7 +22,7 @@ public class Nucleo extends Thread
     public void Barrera()
     {
         try {
-            MainThread.aux.acquire();
+            MainThread.semauxforo.acquire();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -28,7 +30,7 @@ public class Nucleo extends Thread
         if(MainThread.enBarrera == 2)
         {
             System.out.println("Ahora somos 2");
-            MainThread.aux.release();
+            MainThread.semauxforo.release();
             MainThread.enBarrera = 0;
             MainThread.semaforo.release(1);
             Pasar();
@@ -36,7 +38,7 @@ public class Nucleo extends Thread
         else
         {
             System.out.println("Espero :(");
-            MainThread.aux.release();
+            MainThread.semauxforo.release();
             synchronized (MainThread.semaforo)
             {
                 try
@@ -57,6 +59,22 @@ public class Nucleo extends Thread
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+        hayFallo();
+    }
+
+    public synchronized void hayFallo()
+    {
+        if (MainThread.candado.tryLock()) {
+            try {
+                System.out.println("Soy " + numNucleo + " y tengo el candado");
+                //hacer cosas con el bloque
+            } finally {
+                MainThread.candado.unlock();
+            }
+        } else {
+            System.out.println("Soy " + numNucleo + " y no obtuve el candado");
+            //no consiguió el candado
         }
         Barrera();
     }
