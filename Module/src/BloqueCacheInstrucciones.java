@@ -24,6 +24,14 @@ public class BloqueCacheInstrucciones {
         return instrucciones;
     }
 
+    public int[] getPalabra(int pos){
+        return instrucciones[pos];
+    }
+
+    public void setPalabra(int pos, int palabra[]){
+        instrucciones[pos]=palabra;
+    }
+
     public void setInstrucciones(int[][] instrucciones) {
         this.instrucciones = instrucciones;
     }

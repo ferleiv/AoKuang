@@ -22,13 +22,13 @@ public class MainThread
 
     private int[] memoriaPrincipalDatos;
     private int[] memoriaPrincipalInstrucciones;
-    private List<Contexto> contextoList;
+    private ArrayList<Contexto> contextoList;
     private boolean busDatos=true;
     private boolean busInstrucciones=true;
-    private List<BloqueCacheDatos> cacheDatosNucleo0;
-    private List<BloqueCacheDatos> cacheDatosNucleo1;
-    private List<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
-    private List<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
+    private ArrayList<BloqueCacheDatos> cacheDatosNucleo0;
+    private ArrayList<BloqueCacheDatos> cacheDatosNucleo1;
+    private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
+    private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
     private Nucleo N0;
     private BloqueCacheDatos invalid = new BloqueCacheDatos(); //Bloque de cache default para retornar en caso de fallo
 
@@ -40,11 +40,13 @@ public class MainThread
             memoriaPrincipalInstrucciones[i] = 1;
         for (int i = 0; i < memoriaPrincipalDatos.length; i++)
             memoriaPrincipalDatos[i] = 1;
+
         contextoList = new ArrayList<Contexto>();
         cacheDatosNucleo0 = new ArrayList<BloqueCacheDatos>();
         cacheDatosNucleo1 = new ArrayList<BloqueCacheDatos>();
         cacheInstruccionesNucleo0 = new ArrayList<BloqueCacheInstrucciones>();
         cacheInstruccionesNucleo1 = new ArrayList<BloqueCacheInstrucciones>();
+
         //initCacheDatos(); //para inicializar cache datos con valores manualmente
         for (int i = 0; i < 4; i++) {
             BloqueCacheInstrucciones bloqueIns1 = new BloqueCacheInstrucciones();
@@ -56,7 +58,8 @@ public class MainThread
             cacheDatosNucleo0.add(bloqueData1);
             cacheDatosNucleo1.add(bloqueData2);
         }
-        N0 = new Nucleo(0, this);
+
+        //N0 = new Nucleo(0, this);
     }
 
     private int leerHilillos (String ruta, int posicionMemInstr){
@@ -113,12 +116,6 @@ public class MainThread
         return false;
     }
 
-    public BloqueCacheDatos verifyCacheDatos( int posicion, int numBloque, int idNucleo ){
-        BloqueCacheDatos target = idNucleo == 0 ? cacheDatosNucleo0.get(posicion) : cacheDatosNucleo1.get(posicion);
-        System.out.print(posicion + "   " + numBloque + "   " + target.getEtiqueta() );
-        if ( target.getEtiqueta() == numBloque ) return target;
-        return invalid;
-    }
 
     public void loadToCacheInstFromMem(int memPosition){
         BloqueCacheInstrucciones newBloque = new BloqueCacheInstrucciones();
