@@ -137,8 +137,8 @@ public class MainThread
     /*public void initCacheDatos(){
         BloqueCacheDatos bl1 = new BloqueCacheDatos(new int[]{4,12,-8,4}, 0, 1);
         BloqueCacheDatos bl2 = new BloqueCacheDatos(new int[]{6,31,0,-2}, 5, 0);
-        BloqueCacheDatos bl3 = new BloqueCacheDatos(new int[]{14,-2,6,1}, 22, 2);
-        BloqueCacheDatos bl4 = new BloqueCacheDatos(new int[]{3,13,-4,9}, 19, 0);
+        BloqueCacheDatos bl3 = new BloqueCacheDatos(new int[]{14,-2,6,9}, 22, 0);
+        BloqueCacheDatos bl4 = new BloqueCacheDatos(new int[]{3,13,-4,9}, 19, 2);
         cacheDatosNucleo0.add(bl1);
         cacheDatosNucleo0.add(bl2);
         cacheDatosNucleo0.add(bl3);

@@ -50,9 +50,10 @@ public class Nucleo
     }
 
     /*Método de prueba para probar LW*/
-    public void ejecutarInstruccion(){
-        LW(0, 11, 308);
-    }
+    /*public void ejecutarInstruccion(){
+        LW(0, 11, 8);
+        SW(0, 11, 364);
+    }*/
 
     public void LW(int rf, int rd, int inm) {
         int dir_mem = contexto.getRegistro(rf) + inm;
@@ -65,7 +66,21 @@ public class Nucleo
         } else fallo_cache();
     }
 
-    /* Si hay fallo caché en LW*/
+    public void SW(int rd, int rf , int inm){
+        int dir_mem = contexto.getRegistro(rd) + inm;
+        int num_bloque = dir_mem / 16;
+        int pos_cache = num_bloque % 4;
+        BloqueCacheDatos target = mainT.verifyCacheDatos( pos_cache, num_bloque, numNucleo);
+        if (target.getEtiqueta() > -1 && target.getEstado() < 2 ) {
+            int num_palabra = ( dir_mem - ( num_bloque * 16 ) ) / 4;
+            int[] palabras = target.getPalabras();
+            palabras[num_palabra] = contexto.getRegistro(rf);
+            target.setPalabras(palabras);
+            target.setEstado(1);
+        } else fallo_cache();
+    }
+
+    /* Si hay fallo caché en LW o SW*/
     public void fallo_cache(){
         System.out.print("\nFallo de cache");
     }
