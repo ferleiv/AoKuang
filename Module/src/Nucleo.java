@@ -294,6 +294,7 @@ public class Nucleo
             semaphoreMiCache.acquire();
             if(miCacheIns.get(pos_cache).getEtiqueta()==num_bloque){
                 result=miCacheIns.get(pos_cache).getPalabra(num_palabra);
+                context.setPC(context.getPC()+4);
             }
             else{ //fallo cache de instrucciones
                 huboFallo = true;
