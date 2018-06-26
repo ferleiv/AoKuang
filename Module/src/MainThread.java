@@ -1,7 +1,4 @@
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -35,7 +32,7 @@ public class MainThread
     private Nucleo N0, N1;
     public static Semaphore semaforo, semauxforo;
     public static Lock candado;
-    public static int enBarrera;
+    public static int enBarrera, tic, modo;
 
     public MainThread() {
         memoriaPrincipalDatos = new int[96];
@@ -55,6 +52,7 @@ public class MainThread
         semaforo = new Semaphore(1);
         semauxforo = new Semaphore(1);
         enBarrera = 0;
+        tic = 0;
         candado = new ReentrantLock();
     }
 
@@ -87,11 +85,36 @@ public class MainThread
         return posicionMemInstr;
     }
 
-    private void empezar()
-    {
-        N0.start();
-        N1.start();
-        //N0.procesar(contextoList.get(1));
+    private void empezar(){
+        System.out.println("Digite el numero segun el modo que desea:\n1. Rapido\n2. Lento");
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String entrada = null;
+        try {
+            entrada = br.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try{
+            modo = Integer.parseInt(entrada);
+        }catch(NumberFormatException nfe){
+            System.err.println("Formato invalido");
+            empezar();
+        }
+        switch (modo)
+        {
+            case 1:
+                System.out.println("Modo rapido seleccionado");
+                break;
+            case 2:
+                System.out.println("Modo lento seleccionado");
+                break;
+            default:
+                System.out.println("Debe digitar 1 o 2");
+                empezar();
+                break;
+        }
+        //N0.start();
+        //N1.start();
     }
 
     public int[] getInstructionFromMem(int memPosition){
