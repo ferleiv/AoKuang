@@ -11,12 +11,12 @@ public class MainThread
     {
         MainThread mainThread = new MainThread();
         int posicion=0;
-        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\0.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\1.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\2.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\3.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\4.txt",posicion);
-        posicion=mainThread.leerHilillos("C:\\Users\\fpand\\IdeaProjects\\AoKuang\\Module\\Hilillos\\5.txt",posicion);
+        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\0.txt",posicion);
+        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\1.txt",posicion);
+        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\2.txt",posicion);
+        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\3.txt",posicion);
+        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\4.txt",posicion);
+        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\5.txt",posicion);
         mainThread.empezar();
     }
 

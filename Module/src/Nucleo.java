@@ -15,7 +15,7 @@ public class Nucleo
     private Semaphore semaphoreMiCache = new Semaphore(1);
     private Semaphore semaphoreOtroCache = new Semaphore(1);
     private Contexto context;
-    private boolean huboFallo = false;
+    private int huboFallo = 0;
 
     public Nucleo(){}
 
@@ -54,22 +54,6 @@ public class Nucleo
     {
         context = contexto;
     }
-
-    /*public boolean checkearEnCache(){
-        int bloqueInstruccion = context.getPC() / 16;
-        int posicionCache = bloqueInstruccion % 4;
-        if ( verifyCacheInstructionsCore0(posicionCache, bloqueInstruccion) == true ) {
-            System.out.print("si está");
-            return true;
-        }
-        return false;
-    }*/
-
-    /*Método de prueba para probar LW*/
-    /*public void ejecutarInstruccion(){
-        LW(0, 11, 8);
-        SW(0, 11, 364);
-    }*/
 
     public Contexto resolverInstruccion(Contexto contexto,int[] ir){
         this.context = contexto;
@@ -176,7 +160,7 @@ public class Nucleo
     }
 
     public ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){
-        huboFallo = true;
+        huboFallo = 40;
         ResultadoFalloCahe resultado = new ResultadoFalloCahe();
         if(busDatos){
             busDatos =false;
@@ -218,7 +202,7 @@ public class Nucleo
     }
 
     public boolean falloCacheSw(int bloque, int palabra, int posicionEnCache){
-        huboFallo = true;
+        huboFallo = 40;
         boolean resultado=false;
         if(busDatos){
             busDatos =false;
@@ -297,7 +281,7 @@ public class Nucleo
                 context.setPC(context.getPC()+4);
             }
             else{ //fallo cache de instrucciones
-                huboFallo = true;
+                huboFallo = 40;
                 if(busInstrucciones){
                     try{
                         semaphoreOtroCache.acquire();
