@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
-public class Nucleo
+public class Nucleo extends Thread
 {
     private int numNucleo;
 
@@ -18,6 +18,55 @@ public class Nucleo
     private int huboFallo = 0;
 
     public Nucleo(){}
+
+    public void run()
+    {
+        Barrera();
+    }
+
+    public void Barrera()
+    {
+        try {
+            MainThread.aux.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        MainThread.enBarrera++;
+        if(MainThread.enBarrera == 2)
+        {
+            System.out.println("Ahora somos 2");
+            MainThread.aux.release();
+            MainThread.enBarrera = 0;
+            MainThread.semaforo.release(1);
+            Pasar();
+        }
+        else
+        {
+            System.out.println("Espero :(");
+            MainThread.aux.release();
+            synchronized (MainThread.semaforo)
+            {
+                try
+                {
+                    MainThread.semaforo.acquire();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            Pasar();
+        }
+    }
+
+    public void Pasar()
+    {
+        System.out.println("Pasamos :)");
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Barrera();
+    }
 
     public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, int[] memoriaPrincipalInstrucciones, int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
         this.miCache = miCache;
@@ -50,8 +99,8 @@ public class Nucleo
         return context;
     }
 
-    public void setContexto(Contexto contexto)
-    {
+
+    public void setContexto(Contexto contexto) {
         context = contexto;
     }
 

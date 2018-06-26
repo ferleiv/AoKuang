@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class MainThread
 {
@@ -11,12 +12,12 @@ public class MainThread
     {
         MainThread mainThread = new MainThread();
         int posicion=0;
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\0.txt",posicion);
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\1.txt",posicion);
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\2.txt",posicion);
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\3.txt",posicion);
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\4.txt",posicion);
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\5.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\0.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\1.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\2.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\3.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\4.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\5.txt",posicion);
         mainThread.empezar();
     }
 
@@ -29,7 +30,9 @@ public class MainThread
     private ArrayList<BloqueCacheDatos> cacheDatosNucleo1;
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
-    private Nucleo N0;
+    private Nucleo N0, N1;
+    public static Semaphore semaforo, aux;
+    public static int enBarrera;
     private BloqueCacheDatos invalid = new BloqueCacheDatos(); //Bloque de cache default para retornar en caso de fallo
 
     public MainThread() {
@@ -40,7 +43,6 @@ public class MainThread
             memoriaPrincipalInstrucciones[i] = 1;
         for (int i = 0; i < memoriaPrincipalDatos.length; i++)
             memoriaPrincipalDatos[i] = 1;
-
         contextoList = new ArrayList<Contexto>();
         cacheDatosNucleo0 = new ArrayList<BloqueCacheDatos>();
         cacheDatosNucleo1 = new ArrayList<BloqueCacheDatos>();
@@ -59,7 +61,11 @@ public class MainThread
             cacheDatosNucleo1.add(bloqueData2);
         }
 
-        //N0 = new Nucleo(0, this);
+        //N0 = new Nucleo(0, cacheDatosNucleo0, cacheInstruccionesNucleo0);
+        //N1 = new Nucleo(1, cacheDatosNucleo1, cacheInstruccionesNucleo1);
+        semaforo = new Semaphore(1);
+        aux = new Semaphore(1);
+        enBarrera = 0;
     }
 
     private int leerHilillos (String ruta, int posicionMemInstr){
@@ -91,8 +97,11 @@ public class MainThread
         return posicionMemInstr;
     }
 
-    private void empezar(){
-        N0.procesar(contextoList.get(1));
+    private void empezar()
+    {
+        N0.start();
+        N1.start();
+        //N0.procesar(contextoList.get(1));
     }
 
     public int[] getInstructionFromMem(int memPosition){
@@ -116,7 +125,6 @@ public class MainThread
         return false;
     }
 
-
     public void loadToCacheInstFromMem(int memPosition){
         BloqueCacheInstrucciones newBloque = new BloqueCacheInstrucciones();
         int numBloque = memPosition / 16;
@@ -129,16 +137,4 @@ public class MainThread
             }
         cacheInstruccionesNucleo0.add( posBloque , newBloque);
     }
-
-    /* Crea bloques manualmente y los agrega a cache instrucciones */
-    /*public void initCacheDatos(){
-        BloqueCacheDatos bl1 = new BloqueCacheDatos(new int[]{4,12,-8,4}, 0, 1);
-        BloqueCacheDatos bl2 = new BloqueCacheDatos(new int[]{6,31,0,-2}, 5, 0);
-        BloqueCacheDatos bl3 = new BloqueCacheDatos(new int[]{14,-2,6,9}, 22, 0);
-        BloqueCacheDatos bl4 = new BloqueCacheDatos(new int[]{3,13,-4,9}, 19, 2);
-        cacheDatosNucleo0.add(bl1);
-        cacheDatosNucleo0.add(bl2);
-        cacheDatosNucleo0.add(bl3);
-        cacheDatosNucleo0.add(bl4);
-    }*/
 }
