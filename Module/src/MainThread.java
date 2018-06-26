@@ -109,10 +109,11 @@ public class MainThread
                 System.out.println("Modo lento seleccionado");
                 break;
             default:
-                System.out.println("Debe digitar 1 o 2");
+                System.err.println("Debe digitar 1 o 2");
                 empezar();
                 break;
         }
+        imprimirEstado();
         //N0.start();
         //N1.start();
     }
@@ -148,5 +149,36 @@ public class MainThread
                 instructionSet[i][j] = memoriaPrincipalInstrucciones[memPosition];
             }
         cacheInstruccionesNucleo0.add( posBloque , newBloque);
+    }
+
+    public void imprimirEstado()
+    {
+        System.out.println("--- MEMORIA PRINCIPAL ---");
+        System.out.println(" -- Memoria de datos -- ");
+        int posMemDatos = 0;
+        for(int i = 0; i < 24; i++)
+        {
+            String bloque = "Bloque " + i + ":  | ";
+            for(int j = 0; j < 4; j++, posMemDatos++)
+            {
+                bloque = bloque + posMemDatos + " | "; //TODO: Cambiar posMemDatos por memoriaPrincipalDatos[posMemDatos]
+            }
+            System.out.println(bloque);
+        }
+        System.out.println(" -- Memoria de intrucciones -- ");
+        int posMemInst = 0;
+        for(int i = 0; i < 40; i++)
+        {
+            String bloque = "Bloque " + i + ":";
+            for(int j = 0; j < 4; j++)
+            {
+                bloque = bloque + "\n\tInstruccion " + j + ": | ";
+                for(int k = 0; k < 4; k++, posMemInst++)
+                {
+                    bloque = bloque + posMemInst + " | "; //TODO: Cambiar posMemDatos por memoriaPrincipalDatos[posMemDatos]
+                }
+            }
+            System.out.println(bloque);
+        }
     }
 }
