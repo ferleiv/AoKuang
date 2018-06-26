@@ -17,8 +17,6 @@ public class Nucleo extends Thread
     private Contexto context;
     private int huboFallo = 0;
 
-    public Nucleo(){}
-
     public void run()
     {
         Barrera();
@@ -68,9 +66,10 @@ public class Nucleo extends Thread
         Barrera();
     }
 
-    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, int[] memoriaPrincipalInstrucciones, int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
+    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones, int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
         this.miCache = miCache;
         this.otroCache = otroCache;
+        this.miCacheIns = miCacheIns;
         this.memoriaPrincipalInstrucciones = memoriaPrincipalInstrucciones;
         this.memoriaPrincipalDatos = memoriaPrincipalDatos;
         this.busDatos = busDatos;
@@ -98,7 +97,6 @@ public class Nucleo extends Thread
     {
         return context;
     }
-
 
     public void setContexto(Contexto contexto) {
         context = contexto;
@@ -206,6 +204,21 @@ public class Nucleo extends Thread
         } else falloCahe = falloCacheLw(num_bloque,num_palabra,pos_cache);
         if(falloCahe.seLogro){ context.setRegistro( rd, falloCahe.resultado);}
         else context.setPC(context.getPC()-4);//no consiguio algo, se devuelve una instruccion para volver a empezar
+    }
+
+    public synchronized void hayFallo()
+    {
+        if (MainThread.candado.tryLock()) {
+            try {
+
+            } finally {
+                MainThread.candado.unlock();
+            }
+        } else {
+            System.out.println("Soy " + numNucleo + " y no obtuve el candado");
+            //no consiguió el candado
+        }
+        Barrera();
     }
 
     public ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){

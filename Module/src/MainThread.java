@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class MainThread
 {
@@ -32,6 +34,7 @@ public class MainThread
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
     private Nucleo N0, N1;
     public static Semaphore semaforo, aux;
+    public static Lock candado;
     public static int enBarrera;
     private BloqueCacheDatos invalid = new BloqueCacheDatos(); //Bloque de cache default para retornar en caso de fallo
 
@@ -61,11 +64,13 @@ public class MainThread
             cacheDatosNucleo1.add(bloqueData2);
         }
 
-        //N0 = new Nucleo(0, cacheDatosNucleo0, cacheInstruccionesNucleo0);
-        //N1 = new Nucleo(1, cacheDatosNucleo1, cacheInstruccionesNucleo1);
+        //Nucleo(miCache,otroCache,miCacheIns,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,numero){
+        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
+        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
         semaforo = new Semaphore(1);
         aux = new Semaphore(1);
         enBarrera = 0;
+        candado = new ReentrantLock();
     }
 
     private int leerHilillos (String ruta, int posicionMemInstr){
