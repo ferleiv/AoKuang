@@ -16,12 +16,14 @@ public class Nucleo
     private Semaphore semaphoreOtroCache = new Semaphore(1);
     private Contexto context;
     private int huboFallo = 0;
+    private boolean terminado = false;
 
     public Nucleo(){}
 
-    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, int[] memoriaPrincipalInstrucciones, int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
+    public Nucleo(ArrayList<BloqueCacheInstrucciones> miCacheIns, ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, int[] memoriaPrincipalInstrucciones, int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
         this.miCache = miCache;
         this.otroCache = otroCache;
+        this.miCacheIns = miCacheIns;
         this.memoriaPrincipalInstrucciones = memoriaPrincipalInstrucciones;
         this.memoriaPrincipalDatos = memoriaPrincipalDatos;
         this.busDatos = busDatos;
@@ -30,19 +32,15 @@ public class Nucleo
 
     }
 
-    public Contexto procesar(Contexto contexto)
+    public int procesar(Contexto contexto)
     {
         setContexto(contexto);
-        /*currentPC = contexto.getPC();
-        if (checkearEnCache())*/
-        //ejecutarInstruccion();
-        /*else mainT.loadToCacheInstFromMem(currentPC);*/
-        /*int[] instruction = mainT.getInstructionFromMem(currentPC);
-        for (int i = 0; i < 4; i++)
-        {
-            System.out.print(instruction[i]+" ");
-        }*/
-        return contexto;
+        //int currentPC = contexto.getPC();
+        while ( !terminado ) {//debe agregarse tambien el fin por quantum
+            resolverInstruccion(siguienteInstruccion());
+        }
+        if (terminado) return 0;
+        return -1;
     }
 
     public Contexto getContexto()
@@ -55,9 +53,7 @@ public class Nucleo
         context = contexto;
     }
 
-    public Contexto resolverInstruccion(Contexto contexto,int[] ir){
-        this.context = contexto;
-
+    public void resolverInstruccion(int[] ir){
         switch (ir[0]){
             case 8:
                 daddi(ir);
@@ -93,12 +89,12 @@ public class Nucleo
                 SW(ir[1],ir[2],ir[3]);
                 break;
             case 63:
+                terminado = true;
                 break;
             default:
                 //Hubo fallo en cache de instrucciones
                 break;
         }
-        return context;
     }
 
     public void daddi(int[] ir){
@@ -288,9 +284,9 @@ public class Nucleo
                         int[][] instrucciones = new int[4][4];
                         for(int i=0; i<4; i++){
                             instrucciones[0][i] = memoriaPrincipalInstrucciones[context.getPC()+i];
-                            instrucciones[2][i] = memoriaPrincipalInstrucciones[context.getPC()+i+4];
-                            instrucciones[3][i] = memoriaPrincipalInstrucciones[context.getPC()+i+8];
-                            instrucciones[4][i] = memoriaPrincipalInstrucciones[context.getPC()+i+12];
+                            instrucciones[1][i] = memoriaPrincipalInstrucciones[context.getPC()+i+4];
+                            instrucciones[2][i] = memoriaPrincipalInstrucciones[context.getPC()+i+8];
+                            instrucciones[3][i] = memoriaPrincipalInstrucciones[context.getPC()+i+12];
                         }
                         miCacheIns.get(pos_cache).setInstrucciones(instrucciones);
                         miCacheIns.get(pos_cache).setEtiqueta(num_bloque);

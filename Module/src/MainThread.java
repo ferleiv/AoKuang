@@ -11,12 +11,12 @@ public class MainThread
     {
         MainThread mainThread = new MainThread();
         int posicion=0;
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\0.txt",posicion);
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\1.txt",posicion);
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\2.txt",posicion);
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\3.txt",posicion);
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\4.txt",posicion);
-        posicion=mainThread.leerHilillos("AoKuang\\Module\\Hilillos\\5.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\0.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\1.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\2.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\3.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\4.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\5.txt",posicion);
         mainThread.empezar();
     }
 
@@ -29,7 +29,7 @@ public class MainThread
     private ArrayList<BloqueCacheDatos> cacheDatosNucleo1;
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
-    private Nucleo N0;
+    private Nucleo N0, N1;
     private BloqueCacheDatos invalid = new BloqueCacheDatos(); //Bloque de cache default para retornar en caso de fallo
 
     public MainThread() {
@@ -58,8 +58,8 @@ public class MainThread
             cacheDatosNucleo0.add(bloqueData1);
             cacheDatosNucleo1.add(bloqueData2);
         }
-
-        //N0 = new Nucleo(0, this);
+        N0 = new Nucleo(cacheInstruccionesNucleo0, cacheDatosNucleo0, cacheDatosNucleo1, memoriaPrincipalInstrucciones, memoriaPrincipalDatos, busDatos, busInstrucciones, 0);
+        N1 = new Nucleo(cacheInstruccionesNucleo1, cacheDatosNucleo1, cacheDatosNucleo0, memoriaPrincipalInstrucciones, memoriaPrincipalDatos, busDatos, busInstrucciones, 0);
     }
 
     private int leerHilillos (String ruta, int posicionMemInstr){
