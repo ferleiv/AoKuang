@@ -31,7 +31,7 @@ public class MainThread
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
     private Nucleo N0, N1;
     public static Semaphore semaforo, semauxforo;
-    public static Lock candado;
+    public static Lock[] candadosN0, candadosN1;
     public static int enBarrera, tic, modo;
 
     public MainThread() {
@@ -53,7 +53,12 @@ public class MainThread
         semauxforo = new Semaphore(1);
         enBarrera = 0;
         tic = 0;
-        candado = new ReentrantLock();
+        candadosN0 = new Lock[4];
+        candadosN1 = new Lock[4];
+        for(int i = 0; i < 4; i++)
+            candadosN0[i] = new ReentrantLock();
+        for(int i = 0; i < 4; i++)
+            candadosN1[i] = new ReentrantLock();
     }
 
     private int leerHilillos (String ruta, int posicionMemInstr){
@@ -161,7 +166,7 @@ public class MainThread
             String bloque = "Bloque " + i + ":  | ";
             for(int j = 0; j < 4; j++, posMemDatos++)
             {
-                bloque = bloque + posMemDatos + " | "; //TODO: Cambiar posMemDatos por memoriaPrincipalDatos[posMemDatos]
+                bloque = bloque + memoriaPrincipalDatos[posMemDatos] + " | "; //TODO: Cambiar posMemDatos por memoriaPrincipalDatos[posMemDatos]
             }
             System.out.println(bloque);
         }
@@ -175,10 +180,60 @@ public class MainThread
                 bloque = bloque + "\n\tInstruccion " + j + ": | ";
                 for(int k = 0; k < 4; k++, posMemInst++)
                 {
-                    bloque = bloque + posMemInst + " | "; //TODO: Cambiar posMemDatos por memoriaPrincipalDatos[posMemDatos]
+                    bloque = bloque + memoriaPrincipalInstrucciones[posMemInst] + " | "; //TODO: Cambiar posMemInst por memoriaPrincipalInstrucciones[posMemInst]
                 }
             }
             System.out.println(bloque);
+        }
+
+        System.out.println("--- CACHES ---");
+        System.out.println(" -- Cache de datos del nucleo 0 -- ");
+        imprimirCacheDatos(cacheDatosNucleo0);
+        System.out.println(" -- Cache de instrucciones del nucleo 0 -- ");
+        imprimirCacheInstrucciones(cacheInstruccionesNucleo0);
+        System.out.println(" -- Cache de datos del nucleo 1 -- ");
+        imprimirCacheDatos(cacheDatosNucleo1);
+        System.out.println(" -- Cache de instrucciones del nucleo 1 -- ");
+        imprimirCacheInstrucciones(cacheInstruccionesNucleo1);
+    }
+
+    private void imprimirCacheDatos(ArrayList<BloqueCacheDatos> nucleo)
+    {
+        BloqueCacheDatos bloqueDatosAux;
+        int[] palabrasDatos;
+        for(int i = 0; i < nucleo.size(); i++)
+        {
+            bloqueDatosAux = nucleo.get(i);
+            palabrasDatos = bloqueDatosAux.getPalabras();
+            String bloque = "Bloque " + i + ": | "
+                            + palabrasDatos[0] + " | "
+                            + palabrasDatos[1] + " | "
+                            + palabrasDatos[2] + " | "
+                            + palabrasDatos[3] + " | ";
+            System.out.println(bloque + bloqueDatosAux.getEtiqueta() + " | " + bloqueDatosAux.getEstado() + " |");
+        }
+    }
+
+    private void imprimirCacheInstrucciones(ArrayList<BloqueCacheInstrucciones> nucleo)
+    {
+        BloqueCacheInstrucciones bloqueInsAux;
+        int[][] palabrasInst;
+        for(int i = 0; i < nucleo.size(); i++)
+        {
+            bloqueInsAux = nucleo.get(i);
+            palabrasInst = bloqueInsAux.getInstrucciones();
+            String bloque = "Bloque " + i + ":";
+            System.out.println(bloque);
+            System.out.println("Etiqueta: " + bloqueInsAux.getEtiqueta());
+            for(int j = 0; j < 4; j++)
+            {
+                bloque = "\tInstruccion " + j + ": | "
+                         + palabrasInst[j][0] + " | "
+                         + palabrasInst[j][1] + " | "
+                         + palabrasInst[j][2] + " | "
+                         + palabrasInst[j][3] + " | ";
+                System.out.println(bloque);
+            }
         }
     }
 }
