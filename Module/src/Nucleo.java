@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
-public class Nucleo
+public class Nucleo extends Thread
 {
     private int numNucleo;
 
@@ -18,9 +18,56 @@ public class Nucleo
     private int huboFallo = 0;
     private boolean terminado = false;
 
-    public Nucleo(){}
+    public void run()
+    {
+        Barrera();
+    }
 
-    public Nucleo(ArrayList<BloqueCacheInstrucciones> miCacheIns, ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, int[] memoriaPrincipalInstrucciones, int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
+    public void Barrera()
+    {
+        try {
+            MainThread.aux.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        MainThread.enBarrera++;
+        if(MainThread.enBarrera == 2)
+        {
+            System.out.println("Ahora somos 2");
+            MainThread.aux.release();
+            MainThread.enBarrera = 0;
+            MainThread.semaforo.release(1);
+            Pasar();
+        }
+        else
+        {
+            System.out.println("Espero :(");
+            MainThread.aux.release();
+            synchronized (MainThread.semaforo)
+            {
+                try
+                {
+                    MainThread.semaforo.acquire();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            Pasar();
+        }
+    }
+
+    public void Pasar()
+    {
+        System.out.println("Pasamos :)");
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Barrera();
+    }
+
+    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones, int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
         this.miCache = miCache;
         this.otroCache = otroCache;
         this.miCacheIns = miCacheIns;
@@ -48,8 +95,7 @@ public class Nucleo
         return context;
     }
 
-    public void setContexto(Contexto contexto)
-    {
+    public void setContexto(Contexto contexto) {
         context = contexto;
     }
 
@@ -153,6 +199,21 @@ public class Nucleo
         } else falloCahe = falloCacheLw(num_bloque,num_palabra,pos_cache);
         if(falloCahe.seLogro){ context.setRegistro( rd, falloCahe.resultado);}
         else context.setPC(context.getPC()-4);//no consiguio algo, se devuelve una instruccion para volver a empezar
+    }
+
+    public synchronized void hayFallo()
+    {
+        if (MainThread.candado.tryLock()) {
+            try {
+
+            } finally {
+                MainThread.candado.unlock();
+            }
+        } else {
+            System.out.println("Soy " + numNucleo + " y no obtuve el candado");
+            //no consiguió el candado
+        }
+        Barrera();
     }
 
     public ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){
