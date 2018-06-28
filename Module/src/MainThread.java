@@ -12,8 +12,8 @@ public class MainThread
 {
     public static void main(String[] args)
     {
-        MainThread mainThread = new MainThread();
         int posicion=0;
+        MainThread mainThread = new MainThread();
         posicion=mainThread.leerHilillos("Module\\Hilillos\\0.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\1.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\2.txt",posicion);
@@ -25,7 +25,7 @@ public class MainThread
 
     private int[] memoriaPrincipalDatos;
     private int[] memoriaPrincipalInstrucciones;
-    private ArrayList<Contexto> contextoList;
+    public static ArrayList<Contexto> contextoList;
     private boolean busDatos=true;
     private boolean busInstrucciones=true;
     private ArrayList<BloqueCacheDatos> cacheDatosNucleo0;
@@ -36,6 +36,9 @@ public class MainThread
     public static Semaphore semaforo, aux;
     public static Lock candado;
     public static int enBarrera;
+    public static int reloj = 0;
+    public static final int quantum = 1000;
+    //public static int next_context = 2;
     private BloqueCacheDatos invalid = new BloqueCacheDatos(); //Bloque de cache default para retornar en caso de fallo
 
     public MainThread() {
@@ -65,8 +68,6 @@ public class MainThread
         }
 
         //Nucleo(miCache,otroCache,miCacheIns,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,numero){
-        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
-        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
         semaforo = new Semaphore(1);
         aux = new Semaphore(1);
         enBarrera = 0;
@@ -104,6 +105,10 @@ public class MainThread
 
     private void empezar()
     {
+        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0, contextoList.get(0));
+        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1, contextoList.get(1));
+        contextoList.remove(0);
+        contextoList.remove(0);
         N0.start();
         N1.start();
         //N0.procesar(contextoList.get(1));

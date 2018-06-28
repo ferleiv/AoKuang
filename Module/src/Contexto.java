@@ -3,7 +3,7 @@ import java.util.Vector;
 
 public class Contexto
 {
-    private int ID, PC;
+    private int ID, PC, index;
     private int[] registros;
     private int Cache; /* 0 = Nucleo 0
                           1 = Nucleo 1 */
@@ -18,10 +18,11 @@ public class Contexto
         registros = new int[32];
     }
 
-    public Contexto(int nID, int nPC)
+    public Contexto(int nID, int nPC, int idx)
     {
         ID = nID;
         PC = nPC;
+        index = idx;
         estado = 0;
         registros = new int[32];
     }

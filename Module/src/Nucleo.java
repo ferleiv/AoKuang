@@ -16,11 +16,13 @@ public class Nucleo extends Thread
     private Semaphore semaphoreOtroCache = new Semaphore(1);
     private Contexto context;
     private int huboFallo = 0;
+    private int quantum;
     private boolean terminado = false;
 
     public void run()
     {
-        Barrera();
+        procesar();
+        //Barrera();
     }
 
     public void Barrera()
@@ -33,15 +35,19 @@ public class Nucleo extends Thread
         MainThread.enBarrera++;
         if(MainThread.enBarrera == 2)
         {
-            System.out.println("Ahora somos 2");
+            System.out.println("Ahora somos 2 " + numNucleo);
+            check_thread_state();
             MainThread.aux.release();
             MainThread.enBarrera = 0;
             MainThread.semaforo.release(1);
+            MainThread.reloj++;
+            quantum--;
             Pasar();
         }
         else
         {
-            System.out.println("Espero :(");
+            System.out.println("Espero :( " + numNucleo);
+            check_thread_state();
             MainThread.aux.release();
             synchronized (MainThread.semaforo)
             {
@@ -58,16 +64,16 @@ public class Nucleo extends Thread
 
     public void Pasar()
     {
-        System.out.println("Pasamos :)");
+        System.out.println("Pasamos :) " + numNucleo);
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        Barrera();
     }
 
-    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones, int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
+    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones,
+                  int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero, Contexto context){
         this.miCache = miCache;
         this.otroCache = otroCache;
         this.miCacheIns = miCacheIns;
@@ -76,18 +82,36 @@ public class Nucleo extends Thread
         this.busDatos = busDatos;
         this.busInstrucciones = busInstrucciones;
         this.numNucleo = numero;
+        this.context = context;
 
     }
 
-    public int procesar(Contexto contexto)
+    public void procesar()
     {
-        setContexto(contexto);
-        //int currentPC = contexto.getPC();
-        while ( !terminado ) {//debe agregarse tambien el fin por quantum
-            resolverInstruccion(siguienteInstruccion());
+        this.quantum = MainThread.quantum;
+        while ( !terminado && quantum > 0) {//debe agregarse tambien el fin por quantum
+            if (huboFallo < 1) {
+                resolverInstruccion(siguienteInstruccion());
+            } else huboFallo--;
+            Barrera();
         }
-        if (terminado) return 0;
-        return -1;
+        Barrera();
+    }
+
+    public void check_thread_state(){
+        if (terminado) {
+            setContexto(MainThread.contextoList.get(0));
+            MainThread.contextoList.remove(context);
+            huboFallo = 0;
+            procesar();
+        };
+        if (quantum < 1) {
+            MainThread.contextoList.add(context);
+            setContexto(MainThread.contextoList.get(0));
+            MainThread.contextoList.remove(context);
+            huboFallo = 0;
+            procesar();
+        }
     }
 
     public Contexto getContexto()
