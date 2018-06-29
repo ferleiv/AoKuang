@@ -18,10 +18,13 @@ public class Nucleo extends Thread
     private Semaphore semaphoreOtroCache = new Semaphore(1);
     private Contexto context;
     private int huboFallo = 0;
+    private int quantum;
+    private boolean terminado = false;
 
     public void run()
     {
-        Barrera();
+        procesar();
+        //Barrera();
     }
 
     public void Barrera()
@@ -34,15 +37,19 @@ public class Nucleo extends Thread
         MainThread.enBarrera++;
         if(MainThread.enBarrera == 2)
         {
-            System.out.println("Ahora somos 2");
+            System.out.println("Ahora somos 2 " + numNucleo);
+            check_thread_state();
             MainThread.semauxforo.release();
             MainThread.enBarrera = 0;
             MainThread.semaforo.release(1);
+            MainThread.reloj++;
+            quantum--;
             Pasar();
         }
         else
         {
-            System.out.println("Espero :(");
+            System.out.println("Espero :( " + numNucleo);
+            check_thread_state();
             MainThread.semauxforo.release();
             synchronized (MainThread.semaforo)
             {
@@ -59,7 +66,7 @@ public class Nucleo extends Thread
 
     public void Pasar()
     {
-        System.out.println("Pasamos :)");
+        System.out.println("Pasamos :) " + numNucleo);
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
@@ -84,7 +91,8 @@ public class Nucleo extends Thread
         Barrera();
     }
 
-    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones, int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
+    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones,
+                  int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero, Contexto context){
         this.miCache = miCache;
         this.otroCache = otroCache;
         this.miCacheIns = miCacheIns;
@@ -93,22 +101,36 @@ public class Nucleo extends Thread
         this.busDatos = busDatos;
         this.busInstrucciones = busInstrucciones;
         this.numNucleo = numero;
+        this.context = context;
 
     }
 
-    public Contexto procesar(Contexto contexto)
+    public void procesar()
     {
-        setContexto(contexto);
-        /*currentPC = contexto.getPC();
-        if (checkearEnCache())*/
-        //ejecutarInstruccion();
-        /*else mainT.loadToCacheInstFromMem(currentPC);*/
-        /*int[] instruction = mainT.getInstructionFromMem(currentPC);
-        for (int i = 0; i < 4; i++)
-        {
-            System.out.print(instruction[i]+" ");
-        }*/
-        return contexto;
+        this.quantum = MainThread.quantum;
+        while ( !terminado && quantum > 0) {//debe agregarse tambien el fin por quantum
+            if (huboFallo < 1) {
+                resolverInstruccion(siguienteInstruccion());
+            } else huboFallo--;
+            Barrera();
+        }
+        Barrera();
+    }
+
+    public void check_thread_state(){
+        if (terminado) {
+            setContexto(MainThread.contextoList.get(0));
+            MainThread.contextoList.remove(context);
+            huboFallo = 0;
+            procesar();
+        };
+        if (quantum < 1) {
+            MainThread.contextoList.add(context);
+            setContexto(MainThread.contextoList.get(0));
+            MainThread.contextoList.remove(context);
+            huboFallo = 0;
+            procesar();
+        }
     }
 
     public Contexto getContexto()
@@ -120,9 +142,7 @@ public class Nucleo extends Thread
         context = contexto;
     }
 
-    public Contexto resolverInstruccion(Contexto contexto,int[] ir){
-        this.context = contexto;
-
+    public void resolverInstruccion(int[] ir){
         switch (ir[0]){
             case 8:
                 daddi(ir);
@@ -158,12 +178,12 @@ public class Nucleo extends Thread
                 SW(ir[1],ir[2],ir[3]);
                 break;
             case 63:
+                terminado = true;
                 break;
             default:
                 //Hubo fallo en cache de instrucciones
                 break;
         }
-        return context;
     }
 
     public void daddi(int[] ir){
@@ -368,9 +388,9 @@ public class Nucleo extends Thread
                         int[][] instrucciones = new int[4][4];
                         for(int i=0; i<4; i++){
                             instrucciones[0][i] = memoriaPrincipalInstrucciones[context.getPC()+i];
-                            instrucciones[2][i] = memoriaPrincipalInstrucciones[context.getPC()+i+4];
-                            instrucciones[3][i] = memoriaPrincipalInstrucciones[context.getPC()+i+8];
-                            instrucciones[4][i] = memoriaPrincipalInstrucciones[context.getPC()+i+12];
+                            instrucciones[1][i] = memoriaPrincipalInstrucciones[context.getPC()+i+4];
+                            instrucciones[2][i] = memoriaPrincipalInstrucciones[context.getPC()+i+8];
+                            instrucciones[3][i] = memoriaPrincipalInstrucciones[context.getPC()+i+12];
                         }
                         miCacheIns.get(pos_cache).setInstrucciones(instrucciones);
                         miCacheIns.get(pos_cache).setEtiqueta(num_bloque);
