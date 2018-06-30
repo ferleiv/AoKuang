@@ -36,7 +36,8 @@ public class MainThread
     public static Lock candado;
     public static int enBarrera, tic, modo;
     public static int reloj = 0;
-    public static final int quantum = 1000;
+    public static int quantum = 1000;
+    private static boolean rapido = true;
 
     public MainThread() {
         memoriaPrincipalDatos = new int[96];
@@ -136,6 +137,22 @@ public class MainThread
                 empezar();
                 break;
         }
+
+        System.out.println("Digite el valor para el quantum que desea:");
+        BufferedReader br2 = new BufferedReader(new InputStreamReader(System.in));
+        String entradaQuantum = null;
+        try {
+            entradaQuantum = br2.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try{
+            quantum = Integer.parseInt(entradaQuantum);
+        }catch(NumberFormatException nfe){
+            System.err.println("Formato invalido");
+            empezar();
+        }
+
         //imprimirEstado();
         N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
         N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);

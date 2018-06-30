@@ -74,13 +74,11 @@ public class Nucleo extends Thread
     }
 
     private void Pasar(){
-        //System.out.println("Pasamos :) " + numNucleo);
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        //hayFallo();
     }
 
     private void procesar() {
@@ -90,10 +88,8 @@ public class Nucleo extends Thread
                 resolverInstruccion(siguienteInstruccion());
             } else huboFallo=0;//huboFallo--;
             Barrera();
-            //no_concurrecia();
         }
         Barrera();
-        //no_concurrecia();
     }
 
     private void check_thread_state(){
@@ -229,6 +225,7 @@ public class Nucleo extends Thread
 
     private ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){
         huboFallo = 40;
+        quantum += 40;
         ResultadoFalloCahe resultado = new ResultadoFalloCahe();
         if(busDatos){
             busDatos =false;
@@ -271,6 +268,7 @@ public class Nucleo extends Thread
 
     private boolean falloCacheSw(int bloque, int palabra, int posicionEnCache){
         huboFallo = 40;
+        quantum += 40;
         boolean resultado=false;
         if(busDatos){
             busDatos =false;
@@ -349,6 +347,7 @@ public class Nucleo extends Thread
             }
             else{ //fallo cache de instrucciones
                 huboFallo = 40;
+                quantum += 40;
                 if(busInstrucciones){
                     try{
                         semaphoreOtroCache.acquire();
