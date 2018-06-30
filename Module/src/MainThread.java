@@ -1,7 +1,4 @@
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -71,7 +68,7 @@ public class MainThread
         //Nucleo(miCache,otroCache,miCacheIns,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,numero){
         N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
         N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
-        semaforo = new Semaphore(1);
+        semaforo = new Semaphore(0);
         semauxforo = new Semaphore(1);
         enBarrera = 0;
         tic = 0;
