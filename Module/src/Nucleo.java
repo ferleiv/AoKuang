@@ -35,19 +35,18 @@ public class Nucleo extends Thread
         MainThread.enBarrera++;
         if(MainThread.enBarrera == 2)
         {
-            System.out.println("Ahora somos 2 " + numNucleo);
-            check_thread_state();
+            //System.out.println("Ahora somos 2 " + numNucleo);
             MainThread.aux.release();
             MainThread.enBarrera = 0;
             MainThread.semaforo.release(1);
             MainThread.reloj++;
             quantum--;
-            Pasar();
+            //Pasar();
+            check_thread_state();
         }
         else
         {
-            System.out.println("Espero :( " + numNucleo);
-            check_thread_state();
+            //System.out.println("Espero :( " + numNucleo);
             MainThread.aux.release();
             synchronized (MainThread.semaforo)
             {
@@ -58,19 +57,26 @@ public class Nucleo extends Thread
                     e.printStackTrace();
                 }
             }
-            Pasar();
+            //Pasar();
+            check_thread_state();
         }
     }
 
     public void Pasar()
     {
-        System.out.println("Pasamos :) " + numNucleo);
-        try {
-            Thread.sleep(2000);
+        //System.out.println("Pasamos :) " + numNucleo);
+        /*try {
+            Thread.sleep(2);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
     }
+
+    /*public void no_concurrecia(){
+        MainThread.reloj++;
+        quantum--;
+        check_thread_state();
+    }*/
 
     public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones,
                   int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero, Contexto context){
@@ -94,16 +100,21 @@ public class Nucleo extends Thread
                 resolverInstruccion(siguienteInstruccion());
             } else huboFallo--;
             Barrera();
+            //no_concurrecia();
         }
         Barrera();
+        //no_concurrecia();
     }
 
     public void check_thread_state(){
         if (terminado) {
-            setContexto(MainThread.contextoList.get(0));
-            MainThread.contextoList.remove(context);
-            huboFallo = 0;
-            procesar();
+            if (MainThread.contextoList.size() > 0 ){
+                setContexto(MainThread.contextoList.get(0));
+                MainThread.contextoList.remove(context);
+                huboFallo = 0;
+                terminado = false;
+                procesar();
+            }
         };
         if (quantum < 1) {
             MainThread.contextoList.add(context);
@@ -234,7 +245,7 @@ public class Nucleo extends Thread
                 MainThread.candado.unlock();
             }
         } else {
-            System.out.println("Soy " + numNucleo + " y no obtuve el candado");
+            //System.out.println("Soy " + numNucleo + " y no obtuve el candado");
             //no consiguió el candado
         }
         Barrera();
@@ -308,13 +319,13 @@ public class Nucleo extends Thread
     public BloqueCacheDatos verifyCacheDatos( int posicion, int numBloque, int idNucleo ){
         BloqueCacheDatos invalid = new BloqueCacheDatos();
         BloqueCacheDatos target = idNucleo == 0 ? miCache.get(posicion) : otroCache.get(posicion);
-        System.out.print(posicion + "   " + numBloque + "   " + target.getEtiqueta() );
+        //System.out.print(posicion + "   " + numBloque + "   " + target.getEtiqueta() );
         if ( target.getEtiqueta() == numBloque ) return target;
         return invalid;
     }
 
     private void guardarBloqueEnMemoria(int bloque, boolean esMiCache){
-        int posicionBloqueMemoria = bloque*16;
+        int posicionBloqueMemoria = bloque*16 / 4;
         int posicionBloqueCache = bloque%4;
         int[] palabras;
         if(esMiCache) {
@@ -330,14 +341,14 @@ public class Nucleo extends Thread
         }
         for(int i = 0; i < 4; i++) {
             memoriaPrincipalDatos[posicionBloqueMemoria] = palabras[0];
-            memoriaPrincipalDatos[posicionBloqueMemoria+4] = palabras[1];
-            memoriaPrincipalDatos[posicionBloqueMemoria+8] = palabras[2];
-            memoriaPrincipalDatos[posicionBloqueMemoria+12] = palabras[3];
+            memoriaPrincipalDatos[posicionBloqueMemoria+1] = palabras[1];
+            memoriaPrincipalDatos[posicionBloqueMemoria+2] = palabras[2];
+            memoriaPrincipalDatos[posicionBloqueMemoria+3] = palabras[3];
         }
     }
 
     private void copiarBloqueDesdeMemoria(int bloque){
-        int posicionBloqueMemoria = bloque*16;
+        int posicionBloqueMemoria = bloque*16 / 4;
         int posicionBloqueCache = bloque%4;
         int[] palabras = new int[4];
         palabras[0] = memoriaPrincipalDatos[posicionBloqueMemoria];

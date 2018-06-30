@@ -68,7 +68,7 @@ public class MainThread
         }
 
         //Nucleo(miCache,otroCache,miCacheIns,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,numero){
-        semaforo = new Semaphore(1);
+        semaforo = new Semaphore(0);
         aux = new Semaphore(1);
         enBarrera = 0;
         candado = new ReentrantLock();
