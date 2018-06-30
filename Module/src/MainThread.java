@@ -17,12 +17,13 @@ public class MainThread
         posicion=mainThread.leerHilillos("Module\\Hilillos\\3.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\4.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\5.txt",posicion);
-        mainThread.empezar();
+        //mainThread.empezar();
+        mainThread.prueba();
     }
 
     private int[] memoriaPrincipalDatos;
     private int[] memoriaPrincipalInstrucciones;
-    private ArrayList<Contexto> contextoList;
+    public static ArrayList<Contexto> contextoList;
     private boolean busDatos=true;
     private boolean busInstrucciones=true;
     private ArrayList<BloqueCacheDatos> cacheDatosNucleo0;
@@ -36,8 +37,6 @@ public class MainThread
     public static int enBarrera, tic, modo;
     public static int reloj = 0;
     public static final int quantum = 1000;
-    //public static int next_context = 2;
-    private BloqueCacheDatos invalid = new BloqueCacheDatos(); //Bloque de cache default para retornar en caso de fallo
 
     public MainThread() {
         memoriaPrincipalDatos = new int[96];
@@ -65,7 +64,7 @@ public class MainThread
             cacheDatosNucleo1.add(bloqueData2);
         }
 
-        //Nucleo(miCache,otroCache,miCacheIns,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,numero){
+        //Nucleo(miCache, otroCache, miCacheIns, memoriaPrincipalInstrucciones, memoriaPrincipalDatos, busDatos, busInstrucciones, numero)
         N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
         N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
         semaforo = new Semaphore(0);
@@ -137,9 +136,22 @@ public class MainThread
                 empezar();
                 break;
         }
-        imprimirEstado();
-        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0, contextoList.get(0));
-        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1, contextoList.get(1));
+        //imprimirEstado();
+        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
+        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
+        N0.setContexto(contextoList.get(0));
+        N1.setContexto(contextoList.get(1));
+        contextoList.remove(0);
+        contextoList.remove(0);
+        N0.start();
+        N1.start();
+    }
+
+    private void prueba(){
+        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
+        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
+        N0.setContexto(contextoList.get(0));
+        N1.setContexto(contextoList.get(1));
         contextoList.remove(0);
         contextoList.remove(0);
         N0.start();
@@ -180,8 +192,7 @@ public class MainThread
         cacheInstruccionesNucleo0.add( posBloque , newBloque);
     }
 
-    public void imprimirEstado()
-    {
+    public void imprimirEstado(){
         System.out.println("--- MEMORIA PRINCIPAL ---");
         System.out.println(" -- Memoria de datos -- ");
         int posMemDatos = 0;
@@ -221,8 +232,7 @@ public class MainThread
         imprimirCacheInstrucciones(cacheInstruccionesNucleo1);
     }
 
-    private void imprimirCacheDatos(ArrayList<BloqueCacheDatos> nucleo)
-    {
+    private void imprimirCacheDatos(ArrayList<BloqueCacheDatos> nucleo) {
         BloqueCacheDatos bloqueDatosAux;
         int[] palabrasDatos;
         for(int i = 0; i < nucleo.size(); i++)
@@ -238,8 +248,7 @@ public class MainThread
         }
     }
 
-    private void imprimirCacheInstrucciones(ArrayList<BloqueCacheInstrucciones> nucleo)
-    {
+    private void imprimirCacheInstrucciones(ArrayList<BloqueCacheInstrucciones> nucleo) {
         BloqueCacheInstrucciones bloqueInsAux;
         int[][] palabrasInst;
         for(int i = 0; i < nucleo.size(); i++)

@@ -92,17 +92,6 @@ public class Utiles {
         Utiles utiles = new Utiles(cacheDatosNucleo0Prueba,cacheDatosNucleo1Prueba,memoriaPrincipalInstruccionesPrueba,memoriaPrincipalDatosPrueba);
         int[] resultadosBuenos = new int[8];
 
-        /*
-        resultadosBuenos[0] = utiles.revisarCacheLw(1,1);
-        resultadosBuenos[1] = utiles.revisarCacheLw(2,2);
-        resultadosBuenos[2] = utiles.revisarCacheLw(3,3);
-        resultadosBuenos[3] = utiles.revisarCacheLw(4,1);
-        resultadosBuenos[4] = utiles.revisarCacheLw(5,2);
-        resultadosBuenos[5] = utiles.revisarCacheLw(6,3);
-        resultadosBuenos[6] = utiles.revisarCacheLw(7,3);
-        resultadosBuenos[7] = utiles.revisarCacheLw(22,3);
-        */
-
         System.out.printf("Bloque 1 palabra 1: %d \nBloque 2 palabra 2: %d \nBloque 3 palabra 3: %d \nBloque 4 palabra 1: %d \nBloque 5 palabra 2: %d \n",resultadosBuenos[0],resultadosBuenos[1],resultadosBuenos[2],resultadosBuenos[3],resultadosBuenos[4]);
     }
 }

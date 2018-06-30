@@ -19,14 +19,25 @@ public class Nucleo extends Thread
     private int quantum;
     private boolean terminado = false;
 
-    public void run()
-    {
+    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones,
+                  int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
+        this.miCache = miCache;
+        this.otroCache = otroCache;
+        this.miCacheIns = miCacheIns;
+        this.memoriaPrincipalInstrucciones = memoriaPrincipalInstrucciones;
+        this.memoriaPrincipalDatos = memoriaPrincipalDatos;
+        this.busDatos = busDatos;
+        this.busInstrucciones = busInstrucciones;
+        this.numNucleo = numero;
+        this.context = new Contexto();
+    }
+
+    public void run() {
         procesar();
         //Barrera();
     }
 
-    public void Barrera()
-    {
+    private void Barrera(){
         try {
             MainThread.semauxforo.acquire();
         } catch (InterruptedException e) {
@@ -42,7 +53,7 @@ public class Nucleo extends Thread
             MainThread.reloj++;
             quantum--;
             //Pasar();
-            check_thread_state();
+            Pasar();
         }
         else
         {
@@ -62,43 +73,22 @@ public class Nucleo extends Thread
         }
     }
 
-    public void Pasar()
-    {
+    private void Pasar(){
         //System.out.println("Pasamos :) " + numNucleo);
-        /*try {
-            Thread.sleep(2);
+        try {
+            Thread.sleep(100);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }*/
+        }
+        //hayFallo();
     }
 
-    /*public void no_concurrecia(){
-        MainThread.reloj++;
-        quantum--;
-        check_thread_state();
-    }*/
-
-    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones,
-                  int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero, Contexto context){
-        this.miCache = miCache;
-        this.otroCache = otroCache;
-        this.miCacheIns = miCacheIns;
-        this.memoriaPrincipalInstrucciones = memoriaPrincipalInstrucciones;
-        this.memoriaPrincipalDatos = memoriaPrincipalDatos;
-        this.busDatos = busDatos;
-        this.busInstrucciones = busInstrucciones;
-        this.numNucleo = numero;
-        this.context = context;
-
-    }
-
-    public void procesar()
-    {
+    private void procesar() {
         this.quantum = MainThread.quantum;
         while ( !terminado && quantum > 0) {//debe agregarse tambien el fin por quantum
             if (huboFallo < 1) {
                 resolverInstruccion(siguienteInstruccion());
-            } else huboFallo--;
+            } else huboFallo=0;//huboFallo--;
             Barrera();
             //no_concurrecia();
         }
@@ -106,7 +96,7 @@ public class Nucleo extends Thread
         //no_concurrecia();
     }
 
-    public void check_thread_state(){
+    private void check_thread_state(){
         if (terminado) {
             if (MainThread.contextoList.size() > 0 ){
                 setContexto(MainThread.contextoList.get(0));
@@ -125,8 +115,7 @@ public class Nucleo extends Thread
         }
     }
 
-    public Contexto getContexto()
-    {
+    public Contexto getContexto(){
         return context;
     }
 
@@ -134,7 +123,8 @@ public class Nucleo extends Thread
         context = contexto;
     }
 
-    public void resolverInstruccion(int[] ir){
+    private void resolverInstruccion(int[] ir){
+        System.out.println("Nucleo: " + numNucleo + " instruccion: " + ir[0]+" | "+ir[1]+" | "+ir[2]+" | "+ir[3]);
         switch (ir[0]){
             case 8:
                 daddi(ir);
@@ -171,6 +161,7 @@ public class Nucleo extends Thread
                 break;
             case 63:
                 terminado = true;
+                System.out.println("\n\n ----- Nucleo " + numNucleo + " termino un hilo ------\n");
                 break;
             default:
                 //Hubo fallo en cache de instrucciones
@@ -178,51 +169,51 @@ public class Nucleo extends Thread
         }
     }
 
-    public void daddi(int[] ir){
+    private void daddi(int[] ir){
         int valor = context.getRegistro(ir[1])+ir[3];
         context.setRegistro(ir[2],valor);
     }
 
-    public void dadd(int[] ir){
+    private void dadd(int[] ir){
         int valor = context.getRegistro(ir[1])+context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
-    public void dsub(int[] ir){
+    private void dsub(int[] ir){
         int valor = context.getRegistro(ir[1])-context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
-    public void dmul(int[] ir){
+    private void dmul(int[] ir){
         int valor = context.getRegistro(ir[1])*context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
-    public void ddiv(int[] ir){
+    private void ddiv(int[] ir){
         int valor = context.getRegistro(ir[1])/context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
-    public void beqz(int[] ir){
+    private void beqz(int[] ir){
         if(context.getRegistro(ir[1])==0)
             context.setPC(context.getPC()+(4*ir[3]));
     }
 
-    public void bnez(int[] ir){
+    private void bnez(int[] ir){
         if(context.getRegistro(ir[1])!=0)
             context.setPC(context.getPC()+(4*ir[3]));
     }
 
-    public void jal(int[] ir){
+    private void jal(int[] ir){
         context.setRegistro(31,context.getPC());
         context.setPC(context.getPC()+ir[3]);
     }
 
-    public void jr(int[] ir){
+    private void jr(int[] ir){
         context.setPC(ir[1]);
     }
 
-    public void LW(int rf, int rd, int inm) {
+    private void LW(int rf, int rd, int inm) {
         int dir_mem = context.getRegistro(rf) + inm;
         int num_bloque = dir_mem / 16;
         int pos_cache = num_bloque % 4;
@@ -236,7 +227,7 @@ public class Nucleo extends Thread
         else context.setPC(context.getPC()-4);//no consiguio algo, se devuelve una instruccion para volver a empezar
     }
 
-    public ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){
+    private ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){
         huboFallo = 40;
         ResultadoFalloCahe resultado = new ResultadoFalloCahe();
         if(busDatos){
@@ -260,7 +251,7 @@ public class Nucleo extends Thread
         return resultado;
     }
 
-    public void SW(int rd, int rf , int inm){
+    private void SW(int rd, int rf , int inm){
         int dir_mem = context.getRegistro(rd) + inm;
         int num_bloque = dir_mem / 16;
         int pos_cache = num_bloque % 4;
@@ -278,7 +269,7 @@ public class Nucleo extends Thread
         }else context.setPC(context.getPC()-4);
     }
 
-    public boolean falloCacheSw(int bloque, int palabra, int posicionEnCache){
+    private boolean falloCacheSw(int bloque, int palabra, int posicionEnCache){
         huboFallo = 40;
         boolean resultado=false;
         if(busDatos){
@@ -301,10 +292,9 @@ public class Nucleo extends Thread
         return resultado;
     }
 
-    public BloqueCacheDatos verifyCacheDatos( int posicion, int numBloque, int idNucleo ){
+    private BloqueCacheDatos verifyCacheDatos( int posicion, int numBloque, int idNucleo ){
         BloqueCacheDatos invalid = new BloqueCacheDatos();
         BloqueCacheDatos target = idNucleo == 0 ? miCache.get(posicion) : otroCache.get(posicion);
-        //System.out.print(posicion + "   " + numBloque + "   " + target.getEtiqueta() );
         if ( target.getEtiqueta() == numBloque ) return target;
         return invalid;
     }
@@ -384,22 +374,22 @@ public class Nucleo extends Thread
         private int resultado = 0;
         private boolean seLogro = false;
 
-        public ResultadoFalloCahe() {
+        private ResultadoFalloCahe() {
         }
 
-        public int getResultado() {
+        private int getResultado() {
             return resultado;
         }
 
-        public void setResultado(int resultado) {
+        private void setResultado(int resultado) {
             this.resultado = resultado;
         }
 
-        public boolean isSeLogro() {
+        private boolean isSeLogro() {
             return seLogro;
         }
 
-        public void setSeLogro(boolean seLogro) {
+        private void setSeLogro(boolean seLogro) {
             this.seLogro = seLogro;
         }
     }
