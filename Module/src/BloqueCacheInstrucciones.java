@@ -1,7 +1,8 @@
 public class BloqueCacheInstrucciones {
-    private int etiqueta;
-    private int[][] instrucciones;
+    private int etiqueta; //Hilillo al que pertenece
+    private int[][] instrucciones; //Instrucciones que incluye
 
+    //Constructor de la clase que inicializa el bloque en 0
     public BloqueCacheInstrucciones() {
         this.etiqueta = -1;
         this.instrucciones = new int[4][4];

@@ -5,20 +5,21 @@ public class Nucleo extends Thread
 {
     private int numNucleo;
 
-    private ArrayList<BloqueCacheDatos> miCache;
-    private ArrayList<BloqueCacheDatos> otroCache;
-    private ArrayList<BloqueCacheInstrucciones> miCacheIns;
-    private int[] memoriaPrincipalInstrucciones;
-    private int[] memoriaPrincipalDatos;
-    private boolean busDatos;
-    private boolean busInstrucciones;
+    private ArrayList<BloqueCacheDatos> miCache; //Cache de datos propia
+    private ArrayList<BloqueCacheDatos> otroCache; //La cache del otro nucleo por si hace falta cambiar o bloquear algo
+    private ArrayList<BloqueCacheInstrucciones> miCacheIns; //Cache de instrucciones propia para saber por donde va
+    private int[] memoriaPrincipalInstrucciones; //Memoria para traer las instrucciones en los fallos
+    private int[] memoriaPrincipalDatos; //Memoria compartida de los datos con el estado mas reciente
+    private boolean busDatos; //Bus de datos del sistema el cual solo esta ocupado o desocupado
+    private boolean busInstrucciones; //Bus de instrucciones del sistema que funciona similar
     private Semaphore semaphoreMiCache = new Semaphore(1);
     private Semaphore semaphoreOtroCache = new Semaphore(1);
-    private Contexto context;
-    private int huboFallo = 0;
-    private int quantum;
-    private boolean terminado = false;
+    private Contexto context; //Contexto del hilillo que se va a procesar
+    private int huboFallo = 0; //Numero que se marca en 40 cuando hay un fallo
+    private int quantum; //Quantum restante del hilillo actual
+    private boolean terminado = false; //Booleano que indica si se llego a la instruccion final del hilillo
 
+    //Constructor de la clase
     public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones,
                   int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
         this.miCache = miCache;
@@ -32,38 +33,40 @@ public class Nucleo extends Thread
         this.context = new Contexto();
     }
 
+    //Metodo que corre cuando a la instancia s le hace start()
     public void run() {
         procesar();
         //Barrera();
     }
 
+    //Metodo de la barrera para sincronizar cada tic del reloj
     private void Barrera(){
         try {
-            MainThread.semauxforo.acquire();
+            MainThread.semauxforo.acquire(); //Semaforo que evita un race condition con la variable enBarrera
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        MainThread.enBarrera++;
-        if(MainThread.enBarrera == 2)
+
+        MainThread.enBarrera++; //Hay uno mas esperando en la barrera
+        if(MainThread.enBarrera == 2) //Verifica si ya son dos o es el primer hilo en entrar
         {
             //System.out.println("Ahora somos 2 " + numNucleo);
-            MainThread.semauxforo.release();
             MainThread.enBarrera = 0;
-            MainThread.semaforo.release(1);
-            MainThread.reloj++;
-            quantum--;
-            //Pasar();
-            Pasar();
+            MainThread.semauxforo.release(); //Ya puede liberar la seccion critica con enBarrera
+            MainThread.semaforo.release(1); //Concede un permiso para que el otro hilo tambien pueda pasar
+            MainThread.reloj++; //Paso un tic
+            quantum--; //Un tic menos de quantum restante
+            Pasar(); //Puede pasar la barrera
         }
         else
         {
             //System.out.println("Espero :( " + numNucleo);
-            MainThread.semauxforo.release();
+            MainThread.semauxforo.release(); //Libera seccion critica con enBarrera
             synchronized (MainThread.semaforo)
             {
                 try
                 {
-                    MainThread.semaforo.acquire();
+                    MainThread.semaforo.acquire(); //Espera al otro hilo
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -73,6 +76,7 @@ public class Nucleo extends Thread
         }
     }
 
+    //Metodo que unicamente se llama en Barrera cuando ambos hilos estan listos para pasar
     private void Pasar(){
         try {
             Thread.sleep(100);
@@ -81,10 +85,11 @@ public class Nucleo extends Thread
         }
     }
 
+    //Metodo que se llama para vigilar si el hilillo no ha terminado y todavia tiene quantum para ser procesado
     private void procesar() {
-        this.quantum = MainThread.quantum;
+        this.quantum = MainThread.quantum; //Toma el quantum restante
         while ( !terminado && quantum > 0) {//debe agregarse tambien el fin por quantum
-            if (huboFallo < 1) {
+            if (huboFallo < 1) { //No hay fallo
                 resolverInstruccion(siguienteInstruccion());
             } else huboFallo=0;//huboFallo--;
             Barrera();
@@ -92,70 +97,74 @@ public class Nucleo extends Thread
         Barrera();
     }
 
+    //Metodo de cambio de contexto si el hilillo actual termino o se quedo sin quantum
     private void check_thread_state(){
-        if (terminado) {
-            if (MainThread.contextoList.size() > 0 ){
-                setContexto(MainThread.contextoList.get(0));
-                MainThread.contextoList.remove(context);
+        if (terminado) { //Hilillo llego a su instruccion final
+            if (MainThread.contextoList.size() > 0 ){ //Si todavia hay hililloss por ejecutar
+                setContexto(MainThread.contextoList.get(0)); //Obtiene el primer contexto en la cola round-robin
+                MainThread.contextoList.remove(context); //Quita el elemento de la cabeza
                 huboFallo = 0;
                 terminado = false;
                 procesar();
             }
         }
-        if (quantum < 1) {
-            MainThread.contextoList.add(context);
-            setContexto(MainThread.contextoList.get(0));
-            MainThread.contextoList.remove(context);
+        if (quantum < 1) { //Se le acabo el quantum
+            MainThread.contextoList.add(context); //Lo agrega a la cola para continuarlo luego
+            setContexto(MainThread.contextoList.get(0)); //Obtiene el primer contexto en la cola round-robin
+            MainThread.contextoList.remove(context); //Quita el elemento de la cabeza
             huboFallo = 0;
             procesar();
         }
     }
 
+    //Getter para el contexto del hilillo
     public Contexto getContexto(){
         return context;
     }
 
+    //Setter para el contexto del hilillo
     public void setContexto(Contexto contexto) {
         context = contexto;
     }
 
+    //Metodo que toma el primer numero de la instruccion para saber de cual se trata y lo que debe hacer
     private void resolverInstruccion(int[] ir){
         System.out.println("Nucleo: " + numNucleo + " instruccion: " + ir[0]+" | "+ir[1]+" | "+ir[2]+" | "+ir[3]);
         switch (ir[0]){
-            case 8:
+            case 8: //8 = DADDI
                 daddi(ir);
                 break;
-            case 32:
+            case 32: //32 = DADD
                 dadd(ir);
                 break;
-            case 34:
+            case 34: //34 = DSUB
                 dsub(ir);
                 break;
-            case 12:
+            case 12: //12 = DMUL
                 dmul(ir);
                 break;
-            case 14:
+            case 14: //14 = DDIV
                 ddiv(ir);
                 break;
-            case 4:
+            case 4: //4 = BEQZ
                 beqz(ir);
                 break;
-            case 5:
+            case 5: //5 = BNEZ
                 bnez(ir);
                 break;
-            case 3:
+            case 3: //3 = JAL
                 jal(ir);
                 break;
-            case 2:
+            case 2: //2 = JR
                 jr(ir);
                 break;
-            case 35:
+            case 35: //35 = LW
                 LW(ir[1],ir[2],ir[3]);
                 break;
-            case 43:
+            case 43: //43 = SW
                 SW(ir[1],ir[2],ir[3]);
                 break;
-            case 63:
+            case 63: //63 = Terminar
                 terminado = true;
                 System.out.println("\n\n ----- Nucleo " + numNucleo + " termino un hilo ------\n");
                 break;
@@ -165,50 +174,60 @@ public class Nucleo extends Thread
         }
     }
 
+    //Metodo para resolver un DADDI
     private void daddi(int[] ir){
         int valor = context.getRegistro(ir[1])+ir[3];
         context.setRegistro(ir[2],valor);
     }
 
+    //Metodo para resolver un DADD
     private void dadd(int[] ir){
         int valor = context.getRegistro(ir[1])+context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
+    //Metodo para resolver un DSUB
     private void dsub(int[] ir){
         int valor = context.getRegistro(ir[1])-context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
+    //Metodo para resolver un DMUL
     private void dmul(int[] ir){
         int valor = context.getRegistro(ir[1])*context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
+    //Metodo para resolver un DDIV
     private void ddiv(int[] ir){
         int valor = context.getRegistro(ir[1])/context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
+    //Metodo para resolver un BEGZ
     private void beqz(int[] ir){
         if(context.getRegistro(ir[1])==0)
             context.setPC(context.getPC()+(4*ir[3]));
     }
 
+    //Metodo para resolver un BNEZ
     private void bnez(int[] ir){
         if(context.getRegistro(ir[1])!=0)
             context.setPC(context.getPC()+(4*ir[3]));
     }
 
+    //Metodo para resolver un JAL
     private void jal(int[] ir){
         context.setRegistro(31,context.getPC());
         context.setPC(context.getPC()+ir[3]);
     }
 
+    //Metodo para resolver un JR
     private void jr(int[] ir){
         context.setPC(ir[1]);
     }
 
+    //Metodo para procesar un LW
     private void LW(int rf, int rd, int inm) {
         int dir_mem = context.getRegistro(rf) + inm;
         int num_bloque = dir_mem / 16;
@@ -223,12 +242,13 @@ public class Nucleo extends Thread
         else context.setPC(context.getPC()-4);//no consiguio algo, se devuelve una instruccion para volver a empezar
     }
 
+    //Metodo que se ejecuta cuando ocurre un fallo de cache en un LW
     private ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){
         huboFallo = 40;
         quantum += 40;
         ResultadoFalloCahe resultado = new ResultadoFalloCahe();
-        if(busDatos){
-            busDatos =false;
+        if(busDatos){ //Bus de datos disponible
+            busDatos =false; //Ahora el bus esta ocupado
             if(miCache.get(posicionEnCache).getEstado()==1){//1 es modificado
                 guardarBloqueEnMemoria(miCache.get(posicionEnCache).getEtiqueta(), true);
             }
@@ -244,10 +264,11 @@ public class Nucleo extends Thread
             resultado.setResultado(miCache.get(posicionEnCache).getPalabras()[palabra]);
         }
         else {resultado.setSeLogro(false);}
-        busDatos =true;
+        busDatos =true; //Desocupa el bus de datos
         return resultado;
     }
 
+    //Metodo para procesar un SW
     private void SW(int rd, int rf , int inm){
         int dir_mem = context.getRegistro(rd) + inm;
         int num_bloque = dir_mem / 16;
@@ -263,15 +284,16 @@ public class Nucleo extends Thread
             palabras[num_palabra] = context.getRegistro(rf);
             target.setPalabras(palabras);
             target.setEstado(1);
-        }else context.setPC(context.getPC()-4);
+        }else context.setPC(context.getPC()-4); //Se devuelve una instruccion para volverlo a intentar
     }
 
+    //Metodo que se ejecuta cuando ocurre un fallo de cache en un SW
     private boolean falloCacheSw(int bloque, int palabra, int posicionEnCache){
         huboFallo = 40;
         quantum += 40;
         boolean resultado=false;
-        if(busDatos){
-            busDatos =false;
+        if(busDatos){ //Bus de datos disponible
+            busDatos =false; //Bus ahora ocupado
             if(miCache.get(posicionEnCache).getEstado()==1){//1 es modificado
                 guardarBloqueEnMemoria(miCache.get(posicionEnCache).getEtiqueta(), true);
             }
@@ -283,13 +305,14 @@ public class Nucleo extends Thread
                     otroCache.get(posicionEnCache).setEstado(2);
                 }
             }
-            catch(InterruptedException e){}finally {semaphoreOtroCache.release();}
+            catch(InterruptedException e){}finally {semaphoreOtroCache.release();} //Libera la posicion
             resultado=true;
         }
-        busDatos =true;
+        busDatos =true; //Libera el bus
         return resultado;
     }
 
+    //Metodo que verifica si los datos de un hilillo estan en la cache propia o en la del otro nucleo
     private BloqueCacheDatos verifyCacheDatos( int posicion, int numBloque, int idNucleo ){
         BloqueCacheDatos invalid = new BloqueCacheDatos();
         BloqueCacheDatos target = idNucleo == 0 ? miCache.get(posicion) : otroCache.get(posicion);
@@ -297,22 +320,23 @@ public class Nucleo extends Thread
         return invalid;
     }
 
+    //Almacenar el memoria principal el nuevo estado de un bloque de datos en cache
     private void guardarBloqueEnMemoria(int bloque, boolean esMiCache){
         int posicionBloqueMemoria = bloque*16 / 4;
         int posicionBloqueCache = bloque%4;
         int[] palabras;
-        if(esMiCache) {
+        if(esMiCache) { //Esta en mi cache
             palabras = miCache.get(posicionBloqueCache).getPalabras();
             miCache.get(posicionBloqueCache).setEstado(0);//0 es compartido
             if(otroCache.get(posicionBloqueCache).getEtiqueta()==bloque)
                 otroCache.get(posicionBloqueCache).setEstado(2);//2 es invalido
-        }else{
+        }else{ //Esta en la cache del otro nucleo
             palabras = otroCache.get(posicionBloqueCache).getPalabras();
             otroCache.get(posicionBloqueCache).setEstado(0);//0 es compartido
             if(miCache.get(posicionBloqueCache).getEtiqueta()==bloque)
                 miCache.get(posicionBloqueCache).setEstado(2);//2 es invalido
         }
-        for(int i = 0; i < 4; i++) {
+        for(int i = 0; i < 4; i++) { //Guarda ya el bloque en memoria principal
             memoriaPrincipalDatos[posicionBloqueMemoria] = palabras[0];
             memoriaPrincipalDatos[posicionBloqueMemoria+1] = palabras[1];
             memoriaPrincipalDatos[posicionBloqueMemoria+2] = palabras[2];
@@ -320,11 +344,12 @@ public class Nucleo extends Thread
         }
     }
 
+    //Metodo para traer un bloque de datos desde la memoria principal
     private void copiarBloqueDesdeMemoria(int bloque){
         int posicionBloqueMemoria = bloque*16 / 4;
         int posicionBloqueCache = bloque%4;
         int[] palabras = new int[4];
-        palabras[0] = memoriaPrincipalDatos[posicionBloqueMemoria];
+        palabras[0] = memoriaPrincipalDatos[posicionBloqueMemoria]; //Empieza a copiaar los datos
         palabras[1] = memoriaPrincipalDatos[posicionBloqueMemoria+1];
         palabras[2] = memoriaPrincipalDatos[posicionBloqueMemoria+2];
         palabras[3] = memoriaPrincipalDatos[posicionBloqueMemoria+3];
@@ -334,25 +359,26 @@ public class Nucleo extends Thread
 
     }
 
+    //Busca la siguiente instruccion en cache, y si no esta, la busca en el otro nucleo y/o trae de memoria principal
     private int[] siguienteInstruccion(){
         int num_bloque = context.getPC() / 16;
         int pos_cache = num_bloque % 4;
         int num_palabra = ( context.getPC() - ( num_bloque * 16 ) ) / 4;
         int[] result = {-1,-1,-1,-1};
         try{
-            semaphoreMiCache.acquire();
-            if(miCacheIns.get(pos_cache).getEtiqueta()==num_bloque){
+            semaphoreMiCache.acquire(); //Bloque la posicion de cache
+            if(miCacheIns.get(pos_cache).getEtiqueta()==num_bloque){ //La instruccion esta en cache
                 result=miCacheIns.get(pos_cache).getPalabra(num_palabra);
                 context.setPC(context.getPC()+4);
             }
             else{ //fallo cache de instrucciones
                 huboFallo = 40;
                 quantum += 40;
-                if(busInstrucciones){
+                if(busInstrucciones){ //Bus de instrucciones disponible
                     try{
-                        semaphoreOtroCache.acquire();
+                        semaphoreOtroCache.acquire(); //Intenta bloquear el bloque en la otra cache
                         int[][] instrucciones = new int[4][4];
-                        for(int i=0; i<4; i++){
+                        for(int i=0; i<4; i++){ //Copia las instrucciones
                             instrucciones[0][i] = memoriaPrincipalInstrucciones[context.getPC()+i];
                             instrucciones[1][i] = memoriaPrincipalInstrucciones[context.getPC()+i+4];
                             instrucciones[2][i] = memoriaPrincipalInstrucciones[context.getPC()+i+8];
@@ -360,15 +386,16 @@ public class Nucleo extends Thread
                         }
                         miCacheIns.get(pos_cache).setInstrucciones(instrucciones);
                         miCacheIns.get(pos_cache).setEtiqueta(num_bloque);
-                    }catch (InterruptedException e) { }finally {semaphoreOtroCache.release();}
+                    }catch (InterruptedException e) { }finally {semaphoreOtroCache.release();} //Libera el otro nucleo
                 }
             }
         } catch (InterruptedException e) {
 
-        }finally {semaphoreMiCache.release();}
+        }finally {semaphoreMiCache.release();} //Bloque la cache propia
         return result;
     }
 
+    //Pequeña clase auxiliar para verificar si hubo un fallo de cache
     private static class ResultadoFalloCahe{
         private int resultado = 0;
         private boolean seLogro = false;
