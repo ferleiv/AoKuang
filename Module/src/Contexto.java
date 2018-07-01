@@ -2,9 +2,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 public class Contexto
-{
+{   //Clase para la abstranccion del contexto de cada hilillo
     private int ID, PC, index;
-    private int[] registros;
+    private int[] registros; //Vector de los registros
     private int Cache; /* 0 = Nucleo 0
                           1 = Nucleo 1 */
 

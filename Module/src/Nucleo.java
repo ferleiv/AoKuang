@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
 public class Nucleo extends Thread
-{
+{   //Clase que representa un nucleo de ejecucion, usan un hilo
     private int numNucleo;
 
     private ArrayList<BloqueCacheDatos> miCache; //Cache de datos propia
