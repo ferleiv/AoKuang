@@ -38,7 +38,7 @@ public class MainThread
     public static int enBarrera, tic, modo;
     public static int reloj = 0;
     public static int quantum = 1000;
-    private static boolean rapido = true;
+    public static boolean rapido = true;
 
     public MainThread() {
         memoriaPrincipalDatos = new int[96];
@@ -179,40 +179,6 @@ public class MainThread
         System.out.print("Contextos completados: " + contextosCompletados.size() + "\n");
     }
 
-    public int[] getInstructionFromMem(int memPosition){
-        int[] instruction = new int[4];
-        for (int i = 0; i < 4; i++)
-            instruction[i] = memoriaPrincipalInstrucciones[memPosition++];
-        return instruction;
-    }
-
-    public int[] getInstructionFromCache(int memPosition){
-        int[] instruction = new int[4];
-        for (int i = 0; i < 4; i++)
-            instruction[i] = memoriaPrincipalInstrucciones[memPosition++];
-        return instruction;
-    }
-
-    public boolean verifyCacheInstructionsCore0( int posicion, int numBloque ) {
-        BloqueCacheInstrucciones target = cacheInstruccionesNucleo0.get(posicion);
-        System.out.print(posicion + "   " + numBloque + "   " + target.getEtiqueta() );
-        if ( target.getEtiqueta() == numBloque ) return true;
-        return false;
-    }
-
-    public void loadToCacheInstFromMem(int memPosition){
-        BloqueCacheInstrucciones newBloque = new BloqueCacheInstrucciones();
-        int numBloque = memPosition / 16;
-        int posBloque = memPosition % 16;
-        newBloque.setEtiqueta(numBloque);
-        int[][] instructionSet = new int[4][4];
-        for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++) {
-                instructionSet[i][j] = memoriaPrincipalInstrucciones[memPosition];
-            }
-        cacheInstruccionesNucleo0.add( posBloque , newBloque);
-    }
-
     public void imprimirEstado(){
         System.out.println("--- MEMORIA PRINCIPAL ---");
         System.out.println(" -- Memoria de datos -- ");
@@ -251,6 +217,7 @@ public class MainThread
         imprimirCacheDatos(cacheDatosNucleo1);
         System.out.println(" -- Cache de instrucciones del nucleo 1 -- ");
         imprimirCacheInstrucciones(cacheInstruccionesNucleo1);
+        imprimirContextos();
     }
 
     private void imprimirCacheDatos(ArrayList<BloqueCacheDatos> nucleo) {
@@ -288,6 +255,32 @@ public class MainThread
                         + palabrasInst[j][3] + " | ";
                 System.out.println(bloque);
             }
+        }
+    }
+
+    private void imprimirContextos(){
+        //Imprimir contextos de los hilillos
+        System.out.println("--- CONTEXTOS ---");
+        Contexto contauxto;
+        String strContexto;
+        ArrayList<Contexto> listaTemporal = new ArrayList<Contexto>();
+
+        if(contextoList.size() > 0){
+            System.out.println(" -- Hilillos sin terminar -- ");
+            listaTemporal = contextoList;
+        }else{
+            System.out.println(" -- Hilillos terminados -- ");
+            listaTemporal = contextosCompletados;
+        }
+
+        for(int c = 0; c < listaTemporal.size(); c++){
+            contauxto = listaTemporal.get(c);
+            strContexto = "ID: " + contauxto.getID() + ". PC: " + contauxto.getPC() + ". Regs: | ";
+            for(int r = 0; r < 32; r++)
+            {
+                strContexto = strContexto + contauxto.getRegistro(r) + " | ";
+            }
+            System.out.println(strContexto);
         }
     }
 }

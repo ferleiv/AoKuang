@@ -76,6 +76,13 @@ public class Nucleo extends Thread
         this.quantum = MainThread.quantum;
         while ( !terminado && quantum > 0) {
             if (huboFallo < 1) {
+                if(MainThread.rapido){
+                    try{
+                        sleep(200);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
                 resolverInstruccion(siguienteInstruccion());
             } else huboFallo--;
             if (MainThread.hilillos_completados < 5) {
