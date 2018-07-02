@@ -17,7 +17,6 @@ public class MainThread
         posicion=mainThread.leerHilillos("Module\\Hilillos\\4.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\5.txt",posicion);
         mainThread.empezar();
-        //mainThread.prueba();
     }
 
     public static int hilillos_completados = 0;

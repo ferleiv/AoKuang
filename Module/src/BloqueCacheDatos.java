@@ -14,15 +14,6 @@ public class BloqueCacheDatos {
         estado = 0;
     }
 
-    /*Constructor para inicializar bloque del cache de datos a partir de values*/
-    /*public BloqueCacheDatos( int[] values, int etiq, int est ) {
-        palabras = new int[4];
-        for( int i = 0; i < 4; i++ )
-            palabras[i] = values[i];
-        etiqueta = etiq;
-        estado = est;
-    }*/
-
     //Getter de la etiqueta
     public int getEtiqueta() {
         return etiqueta;
