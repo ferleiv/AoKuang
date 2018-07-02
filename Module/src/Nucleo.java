@@ -47,6 +47,7 @@ public class Nucleo extends Thread
             MainThread.semauxforo.release();
             MainThread.enBarrera = 0;
             MainThread.semaforo.release(1);
+            System.out.println("Reloj: " + MainThread.reloj + " Nucleo: " + numNucleo + " Hilo: " + context.getID());
             MainThread.reloj++;
             quantum--;
         }
@@ -76,7 +77,6 @@ public class Nucleo extends Thread
         this.quantum = MainThread.quantum;
         while ( !terminado && quantum > 0) {
             if (huboFallo < 1) {
-                System.out.println("Reloj: " + MainThread.reloj + " Nucleo: " + numNucleo + " Hilo: " + context.getID());
                 if(!MainThread.rapido){
                     try{
                         sleep(200);
