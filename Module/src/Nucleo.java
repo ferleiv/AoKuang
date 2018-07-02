@@ -67,6 +67,7 @@ public class Nucleo extends Thread
     }
 
     private void Pasar(){
+        System.out.println("Reloj: " + MainThread.reloj + " Nucleo: " + numNucleo + " Hilo: " + context.getID());
         MainThread.reloj++;
         quantum--;
         check_thread_state();
@@ -76,7 +77,7 @@ public class Nucleo extends Thread
         this.quantum = MainThread.quantum;
         while ( !terminado && quantum > 0) {
             if (huboFallo < 1) {
-                if(MainThread.rapido){
+                if(!MainThread.rapido){
                     try{
                         sleep(200);
                     } catch (InterruptedException e) {
@@ -236,6 +237,13 @@ public class Nucleo extends Thread
     private ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){
         huboFallo = 40;
         quantum += 40;
+        if(numNucleo==0){
+            semaphoreMiCache=MainThread.candadosN0[posicionEnCache];
+            semaphoreOtroCache=MainThread.candadosN1[posicionEnCache];
+        }else {
+            semaphoreMiCache=MainThread.candadosN1[posicionEnCache];
+            semaphoreOtroCache=MainThread.candadosN0[posicionEnCache];
+        }
         ResultadoFalloCahe resultado = new ResultadoFalloCahe();
         if(MainThread.busDatos){
             MainThread.busDatos =false;

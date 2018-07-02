@@ -33,7 +33,7 @@ public class MainThread
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
     private Nucleo N0, N1;
     public static Semaphore semaforo, semauxforo;
-    public static Lock[] candadosN0, candadosN1;
+    public static Semaphore[] candadosN0, candadosN1;
     public static Lock candado;
     public static int enBarrera, tic, modo;
     public static int reloj = 0;
@@ -74,12 +74,12 @@ public class MainThread
         semauxforo = new Semaphore(1);
         enBarrera = 0;
         tic = 0;
-        candadosN0 = new Lock[4];
-        candadosN1 = new Lock[4];
+        candadosN0 = new Semaphore[4];
+        candadosN1 = new Semaphore[4];
         for(int i = 0; i < 4; i++)
-            candadosN0[i] = new ReentrantLock();
+            candadosN0[i] = new Semaphore(1);
         for(int i = 0; i < 4; i++)
-            candadosN1[i] = new ReentrantLock();
+            candadosN1[i] = new Semaphore(1);
     }
 
     private int leerHilillos (String ruta, int posicionMemInstr){
@@ -133,6 +133,7 @@ public class MainThread
                 break;
             case 2:
                 System.out.println("Modo lento seleccionado");
+                rapido=false;
                 break;
             default:
                 System.err.println("Debe digitar 1 o 2");
@@ -283,4 +284,5 @@ public class MainThread
             System.out.println(strContexto);
         }
     }
+
 }
