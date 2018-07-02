@@ -16,8 +16,8 @@ public class MainThread
         posicion=mainThread.leerHilillos("Module\\Hilillos\\3.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\4.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\5.txt",posicion);
-        //mainThread.empezar();
-        mainThread.prueba();
+        mainThread.empezar();
+        //mainThread.prueba();
     }
 
     public static int hilillos_completados = 0;
@@ -111,7 +111,7 @@ public class MainThread
         return posicionMemInstr;
     }
 
-    private void empezar(){
+    private void empezar() throws InterruptedException {
         System.out.println("Digite el numero segun el modo que desea:\n1. Rapido\n2. Lento");
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String entrada = null;
@@ -162,6 +162,9 @@ public class MainThread
         contextoList.remove(0);
         N0.start();
         N1.start();
+        N0.join();
+        N1.join();
+        imprimirEstado();
     }
 
     private void prueba() throws InterruptedException {
