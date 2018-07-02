@@ -1,7 +1,4 @@
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -10,8 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class MainThread
 {
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) throws InterruptedException {
         int posicion=0;
         MainThread mainThread = new MainThread();
         posicion=mainThread.leerHilillos("Module\\Hilillos\\0.txt",posicion);
@@ -20,26 +16,29 @@ public class MainThread
         posicion=mainThread.leerHilillos("Module\\Hilillos\\3.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\4.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\5.txt",posicion);
-        mainThread.empezar();
+        //mainThread.empezar();
+        mainThread.prueba();
     }
 
+    public static int hilillos_completados = 0;
     private int[] memoriaPrincipalDatos;
     private int[] memoriaPrincipalInstrucciones;
     public static ArrayList<Contexto> contextoList;
-    private boolean busDatos=true;
-    private boolean busInstrucciones=true;
+    public static ArrayList<Contexto> contextosCompletados;
+    public static boolean busDatos=true;
+    public static boolean busInstrucciones=true;
     private ArrayList<BloqueCacheDatos> cacheDatosNucleo0;
     private ArrayList<BloqueCacheDatos> cacheDatosNucleo1;
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
     private Nucleo N0, N1;
-    public static Semaphore semaforo, aux;
+    public static Semaphore semaforo, semauxforo;
+    public static Lock[] candadosN0, candadosN1;
     public static Lock candado;
-    public static int enBarrera;
+    public static int enBarrera, tic, modo;
     public static int reloj = 0;
-    public static final int quantum = 1000;
-    //public static int next_context = 2;
-    private BloqueCacheDatos invalid = new BloqueCacheDatos(); //Bloque de cache default para retornar en caso de fallo
+    public static int quantum = 1000;
+    private static boolean rapido = true;
 
     public MainThread() {
         memoriaPrincipalDatos = new int[96];
@@ -50,6 +49,7 @@ public class MainThread
         for (int i = 0; i < memoriaPrincipalDatos.length; i++)
             memoriaPrincipalDatos[i] = 1;
         contextoList = new ArrayList<Contexto>();
+        contextosCompletados = new ArrayList<Contexto>();
         cacheDatosNucleo0 = new ArrayList<BloqueCacheDatos>();
         cacheDatosNucleo1 = new ArrayList<BloqueCacheDatos>();
         cacheInstruccionesNucleo0 = new ArrayList<BloqueCacheInstrucciones>();
@@ -67,11 +67,19 @@ public class MainThread
             cacheDatosNucleo1.add(bloqueData2);
         }
 
-        //Nucleo(miCache,otroCache,miCacheIns,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,numero){
+        //Nucleo(miCache, otroCache, miCacheIns, memoriaPrincipalInstrucciones, memoriaPrincipalDatos, busDatos, busInstrucciones, numero)
+        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
+        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
         semaforo = new Semaphore(0);
-        aux = new Semaphore(1);
+        semauxforo = new Semaphore(1);
         enBarrera = 0;
-        candado = new ReentrantLock();
+        tic = 0;
+        candadosN0 = new Lock[4];
+        candadosN1 = new Lock[4];
+        for(int i = 0; i < 4; i++)
+            candadosN0[i] = new ReentrantLock();
+        for(int i = 0; i < 4; i++)
+            candadosN1[i] = new ReentrantLock();
     }
 
     private int leerHilillos (String ruta, int posicionMemInstr){
@@ -103,15 +111,69 @@ public class MainThread
         return posicionMemInstr;
     }
 
-    private void empezar()
-    {
-        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0, contextoList.get(0));
-        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1, contextoList.get(1));
+    private void empezar(){
+        System.out.println("Digite el numero segun el modo que desea:\n1. Rapido\n2. Lento");
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String entrada = null;
+        try {
+            entrada = br.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try{
+            modo = Integer.parseInt(entrada);
+        }catch(NumberFormatException nfe){
+            System.err.println("Formato invalido");
+            empezar();
+        }
+        switch (modo)
+        {
+            case 1:
+                System.out.println("Modo rapido seleccionado");
+                break;
+            case 2:
+                System.out.println("Modo lento seleccionado");
+                break;
+            default:
+                System.err.println("Debe digitar 1 o 2");
+                empezar();
+                break;
+        }
+
+        System.out.println("Digite el valor para el quantum que desea:");
+        BufferedReader br2 = new BufferedReader(new InputStreamReader(System.in));
+        String entradaQuantum = null;
+        try {
+            entradaQuantum = br2.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try{
+            quantum = Integer.parseInt(entradaQuantum);
+        }catch(NumberFormatException nfe){
+            System.err.println("Formato invalido");
+            empezar();
+        }
+
+        //imprimirEstado();
+        N0.setContexto(contextoList.get(0));
+        N1.setContexto(contextoList.get(1));
         contextoList.remove(0);
         contextoList.remove(0);
         N0.start();
         N1.start();
-        //N0.procesar(contextoList.get(1));
+    }
+
+    private void prueba() throws InterruptedException {
+        N0.setContexto(contextoList.get(0));
+        N1.setContexto(contextoList.get(1));
+        contextoList.remove(0);
+        contextoList.remove(0);
+        N0.start();
+        N1.start();
+        N0.join();
+        N1.join();
+        System.out.print("Contextos completados: " + contextosCompletados.size() + "\n");
     }
 
     public int[] getInstructionFromMem(int memPosition){
@@ -148,15 +210,81 @@ public class MainThread
         cacheInstruccionesNucleo0.add( posBloque , newBloque);
     }
 
-    /* Crea bloques manualmente y los agrega a cache instrucciones */
-    /*public void initCacheDatos(){
-        BloqueCacheDatos bl1 = new BloqueCacheDatos(new int[]{4,12,-8,4}, 0, 1);
-        BloqueCacheDatos bl2 = new BloqueCacheDatos(new int[]{6,31,0,-2}, 5, 0);
-        BloqueCacheDatos bl3 = new BloqueCacheDatos(new int[]{14,-2,6,9}, 22, 0);
-        BloqueCacheDatos bl4 = new BloqueCacheDatos(new int[]{3,13,-4,9}, 19, 2);
-        cacheDatosNucleo0.add(bl1);
-        cacheDatosNucleo0.add(bl2);
-        cacheDatosNucleo0.add(bl3);
-        cacheDatosNucleo0.add(bl4);
-    }*/
+    public void imprimirEstado(){
+        System.out.println("--- MEMORIA PRINCIPAL ---");
+        System.out.println(" -- Memoria de datos -- ");
+        int posMemDatos = 0;
+        for(int i = 0; i < 24; i++)
+        {
+            String bloque = "Bloque " + i + ":  | ";
+            for(int j = 0; j < 4; j++, posMemDatos++)
+            {
+                bloque = bloque + memoriaPrincipalDatos[posMemDatos] + " | "; //TODO: Cambiar posMemDatos por memoriaPrincipalDatos[posMemDatos]
+            }
+            System.out.println(bloque);
+        }
+        System.out.println(" -- Memoria de intrucciones -- ");
+        int posMemInst = 0;
+        for(int i = 0; i < 40; i++)
+        {
+            String bloque = "Bloque " + i + ":";
+            for(int j = 0; j < 4; j++)
+            {
+                bloque = bloque + "\n\tInstruccion " + j + ": | ";
+                for(int k = 0; k < 4; k++, posMemInst++)
+                {
+                    bloque = bloque + memoriaPrincipalInstrucciones[posMemInst] + " | "; //TODO: Cambiar posMemInst por memoriaPrincipalInstrucciones[posMemInst]
+                }
+            }
+            System.out.println(bloque);
+        }
+
+        System.out.println("--- CACHES ---");
+        System.out.println(" -- Cache de datos del nucleo 0 -- ");
+        imprimirCacheDatos(cacheDatosNucleo0);
+        System.out.println(" -- Cache de instrucciones del nucleo 0 -- ");
+        imprimirCacheInstrucciones(cacheInstruccionesNucleo0);
+        System.out.println(" -- Cache de datos del nucleo 1 -- ");
+        imprimirCacheDatos(cacheDatosNucleo1);
+        System.out.println(" -- Cache de instrucciones del nucleo 1 -- ");
+        imprimirCacheInstrucciones(cacheInstruccionesNucleo1);
+    }
+
+    private void imprimirCacheDatos(ArrayList<BloqueCacheDatos> nucleo) {
+        BloqueCacheDatos bloqueDatosAux;
+        int[] palabrasDatos;
+        for(int i = 0; i < nucleo.size(); i++)
+        {
+            bloqueDatosAux = nucleo.get(i);
+            palabrasDatos = bloqueDatosAux.getPalabras();
+            String bloque = "Bloque " + i + ": | "
+                    + palabrasDatos[0] + " | "
+                    + palabrasDatos[1] + " | "
+                    + palabrasDatos[2] + " | "
+                    + palabrasDatos[3] + " | ";
+            System.out.println(bloque + bloqueDatosAux.getEtiqueta() + " | " + bloqueDatosAux.getEstado() + " |");
+        }
+    }
+
+    private void imprimirCacheInstrucciones(ArrayList<BloqueCacheInstrucciones> nucleo) {
+        BloqueCacheInstrucciones bloqueInsAux;
+        int[][] palabrasInst;
+        for(int i = 0; i < nucleo.size(); i++)
+        {
+            bloqueInsAux = nucleo.get(i);
+            palabrasInst = bloqueInsAux.getInstrucciones();
+            String bloque = "Bloque " + i + ":";
+            System.out.println(bloque);
+            System.out.println("Etiqueta: " + bloqueInsAux.getEtiqueta());
+            for(int j = 0; j < 4; j++)
+            {
+                bloque = "\tInstruccion " + j + ": | "
+                        + palabrasInst[j][0] + " | "
+                        + palabrasInst[j][1] + " | "
+                        + palabrasInst[j][2] + " | "
+                        + palabrasInst[j][3] + " | ";
+                System.out.println(bloque);
+            }
+        }
+    }
 }

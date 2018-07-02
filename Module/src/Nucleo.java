@@ -4,14 +4,13 @@ import java.util.concurrent.Semaphore;
 public class Nucleo extends Thread
 {
     private int numNucleo;
-
     private ArrayList<BloqueCacheDatos> miCache;
     private ArrayList<BloqueCacheDatos> otroCache;
     private ArrayList<BloqueCacheInstrucciones> miCacheIns;
     private int[] memoriaPrincipalInstrucciones;
     private int[] memoriaPrincipalDatos;
-    private boolean busDatos;
-    private boolean busInstrucciones;
+    //private boolean busDatos;
+    //private boolean busInstrucciones;
     private Semaphore semaphoreMiCache = new Semaphore(1);
     private Semaphore semaphoreOtroCache = new Semaphore(1);
     private Contexto context;
@@ -19,35 +18,41 @@ public class Nucleo extends Thread
     private int quantum;
     private boolean terminado = false;
 
-    public void run()
-    {
-        procesar();
-        //Barrera();
+    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones,
+                  int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
+        this.miCache = miCache;
+        this.otroCache = otroCache;
+        this.miCacheIns = miCacheIns;
+        this.memoriaPrincipalInstrucciones = memoriaPrincipalInstrucciones;
+        this.memoriaPrincipalDatos = memoriaPrincipalDatos;
+        //this.busDatos = busDatos;
+        //this.busInstrucciones = busInstrucciones;
+        this.numNucleo = numero;
+        this.context = new Contexto();
     }
 
-    public void Barrera()
-    {
+    public void run() {
+        procesar();
+    }
+
+    private void Barrera(){
         try {
-            MainThread.aux.acquire();
+            MainThread.semauxforo.acquire();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         MainThread.enBarrera++;
         if(MainThread.enBarrera == 2)
         {
-            //System.out.println("Ahora somos 2 " + numNucleo);
-            MainThread.aux.release();
+            MainThread.semauxforo.release();
             MainThread.enBarrera = 0;
             MainThread.semaforo.release(1);
             MainThread.reloj++;
             quantum--;
-            //Pasar();
-            check_thread_state();
         }
         else
         {
-            //System.out.println("Espero :( " + numNucleo);
-            MainThread.aux.release();
+            MainThread.semauxforo.release();
             synchronized (MainThread.semaforo)
             {
                 try
@@ -57,65 +62,42 @@ public class Nucleo extends Thread
                     e.printStackTrace();
                 }
             }
-            //Pasar();
-            check_thread_state();
         }
+        check_thread_state();
     }
 
-    public void Pasar()
-    {
-        //System.out.println("Pasamos :) " + numNucleo);
-        /*try {
-            Thread.sleep(2);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
-    }
-
-    /*public void no_concurrecia(){
+    private void Pasar(){
         MainThread.reloj++;
         quantum--;
         check_thread_state();
-    }*/
-
-    public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones,
-                  int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero, Contexto context){
-        this.miCache = miCache;
-        this.otroCache = otroCache;
-        this.miCacheIns = miCacheIns;
-        this.memoriaPrincipalInstrucciones = memoriaPrincipalInstrucciones;
-        this.memoriaPrincipalDatos = memoriaPrincipalDatos;
-        this.busDatos = busDatos;
-        this.busInstrucciones = busInstrucciones;
-        this.numNucleo = numero;
-        this.context = context;
-
     }
 
-    public void procesar()
-    {
+    private void procesar() {
         this.quantum = MainThread.quantum;
-        while ( !terminado && quantum > 0) {//debe agregarse tambien el fin por quantum
+        while ( !terminado && quantum > 0) {
             if (huboFallo < 1) {
                 resolverInstruccion(siguienteInstruccion());
             } else huboFallo--;
-            Barrera();
-            //no_concurrecia();
+            if (MainThread.hilillos_completados < 5) {
+                Barrera();
+            } else Pasar();
         }
-        Barrera();
-        //no_concurrecia();
     }
 
-    public void check_thread_state(){
+    private void check_thread_state(){
         if (terminado) {
+            MainThread.contextosCompletados.add(context);
             if (MainThread.contextoList.size() > 0 ){
                 setContexto(MainThread.contextoList.get(0));
                 MainThread.contextoList.remove(context);
                 huboFallo = 0;
                 terminado = false;
                 procesar();
+            } else {
+                MainThread.semauxforo.release();
+                MainThread.semaforo.release(1);
             }
-        };
+        }
         if (quantum < 1) {
             MainThread.contextoList.add(context);
             setContexto(MainThread.contextoList.get(0));
@@ -125,8 +107,7 @@ public class Nucleo extends Thread
         }
     }
 
-    public Contexto getContexto()
-    {
+    public Contexto getContexto(){
         return context;
     }
 
@@ -134,7 +115,10 @@ public class Nucleo extends Thread
         context = contexto;
     }
 
-    public void resolverInstruccion(int[] ir){
+    private void resolverInstruccion(int[] ir){
+        /*if (/*numNucleo == 0 &&ir[0] != -1 && context.getID() == 4) {
+            System.out.println("Nucleo: " + numNucleo + " Hilillo " + context.getID() + " instruccion: " + ir[0] + " | " + ir[1] + " | " + ir[2] + " | " + ir[3]);
+        }*/
         switch (ir[0]){
             case 8:
                 daddi(ir);
@@ -171,6 +155,8 @@ public class Nucleo extends Thread
                 break;
             case 63:
                 terminado = true;
+                MainThread.hilillos_completados++;
+                System.out.println("\n\n ----- Nucleo " + numNucleo + " termino hilillo " + context.getID() + "------\n");
                 break;
             default:
                 //Hubo fallo en cache de instrucciones
@@ -178,51 +164,51 @@ public class Nucleo extends Thread
         }
     }
 
-    public void daddi(int[] ir){
+    private void daddi(int[] ir){
         int valor = context.getRegistro(ir[1])+ir[3];
         context.setRegistro(ir[2],valor);
     }
 
-    public void dadd(int[] ir){
+    private void dadd(int[] ir){
         int valor = context.getRegistro(ir[1])+context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
-    public void dsub(int[] ir){
+    private void dsub(int[] ir){
         int valor = context.getRegistro(ir[1])-context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
-    public void dmul(int[] ir){
+    private void dmul(int[] ir){
         int valor = context.getRegistro(ir[1])*context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
-    public void ddiv(int[] ir){
+    private void ddiv(int[] ir){
         int valor = context.getRegistro(ir[1])/context.getRegistro(ir[2]);
         context.setRegistro(ir[3],valor);
     }
 
-    public void beqz(int[] ir){
+    private void beqz(int[] ir){
         if(context.getRegistro(ir[1])==0)
             context.setPC(context.getPC()+(4*ir[3]));
     }
 
-    public void bnez(int[] ir){
+    private void bnez(int[] ir){
         if(context.getRegistro(ir[1])!=0)
             context.setPC(context.getPC()+(4*ir[3]));
     }
 
-    public void jal(int[] ir){
+    private void jal(int[] ir){
         context.setRegistro(31,context.getPC());
         context.setPC(context.getPC()+ir[3]);
     }
 
-    public void jr(int[] ir){
+    private void jr(int[] ir){
         context.setPC(ir[1]);
     }
 
-    public void LW(int rf, int rd, int inm) {
+    private void LW(int rf, int rd, int inm) {
         int dir_mem = context.getRegistro(rf) + inm;
         int num_bloque = dir_mem / 16;
         int pos_cache = num_bloque % 4;
@@ -232,30 +218,20 @@ public class Nucleo extends Thread
         if (target.getEtiqueta() > -1 && target.getEstado() < 2 ) {
             context.setRegistro( rd, target.getPalabras()[num_palabra]);
         } else falloCahe = falloCacheLw(num_bloque,num_palabra,pos_cache);
-        if(falloCahe.seLogro){ context.setRegistro( rd, falloCahe.resultado);}
-        else context.setPC(context.getPC()-4);//no consiguio algo, se devuelve una instruccion para volver a empezar
-    }
-
-    public synchronized void hayFallo()
-    {
-        if (MainThread.candado.tryLock()) {
-            try {
-
-            } finally {
-                MainThread.candado.unlock();
-            }
-        } else {
-            //System.out.println("Soy " + numNucleo + " y no obtuve el candado");
-            //no consiguió el candado
+        if (huboFallo > 0) {
+            if (falloCahe.seLogro) {
+                context.setRegistro(rd, falloCahe.resultado);
+            } else
+                context.setPC(context.getPC() - 4);//no consiguio algo, se devuelve una instruccion para volver a empezar
         }
-        Barrera();
     }
 
-    public ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){
+    private ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){
         huboFallo = 40;
+        quantum += 40;
         ResultadoFalloCahe resultado = new ResultadoFalloCahe();
-        if(busDatos){
-            busDatos =false;
+        if(MainThread.busDatos){
+            MainThread.busDatos =false;
             if(miCache.get(posicionEnCache).getEstado()==1){//1 es modificado
                 guardarBloqueEnMemoria(miCache.get(posicionEnCache).getEtiqueta(), true);
             }
@@ -271,11 +247,11 @@ public class Nucleo extends Thread
             resultado.setResultado(miCache.get(posicionEnCache).getPalabras()[palabra]);
         }
         else {resultado.setSeLogro(false);}
-        busDatos =true;
+        MainThread.busDatos =true;
         return resultado;
     }
 
-    public void SW(int rd, int rf , int inm){
+    private void SW(int rd, int rf , int inm){
         int dir_mem = context.getRegistro(rd) + inm;
         int num_bloque = dir_mem / 16;
         int pos_cache = num_bloque % 4;
@@ -293,11 +269,12 @@ public class Nucleo extends Thread
         }else context.setPC(context.getPC()-4);
     }
 
-    public boolean falloCacheSw(int bloque, int palabra, int posicionEnCache){
+    private boolean falloCacheSw(int bloque, int palabra, int posicionEnCache){
         huboFallo = 40;
+        quantum += 40;
         boolean resultado=false;
-        if(busDatos){
-            busDatos =false;
+        if(MainThread.busDatos){
+            MainThread.busDatos =false;
             if(miCache.get(posicionEnCache).getEstado()==1){//1 es modificado
                 guardarBloqueEnMemoria(miCache.get(posicionEnCache).getEtiqueta(), true);
             }
@@ -312,14 +289,13 @@ public class Nucleo extends Thread
             catch(InterruptedException e){}finally {semaphoreOtroCache.release();}
             resultado=true;
         }
-        busDatos =true;
+        MainThread.busDatos =true;
         return resultado;
     }
 
-    public BloqueCacheDatos verifyCacheDatos( int posicion, int numBloque, int idNucleo ){
+    private BloqueCacheDatos verifyCacheDatos( int posicion, int numBloque, int idNucleo ){
         BloqueCacheDatos invalid = new BloqueCacheDatos();
         BloqueCacheDatos target = idNucleo == 0 ? miCache.get(posicion) : otroCache.get(posicion);
-        //System.out.print(posicion + "   " + numBloque + "   " + target.getEtiqueta() );
         if ( target.getEtiqueta() == numBloque ) return target;
         return invalid;
     }
@@ -366,32 +342,35 @@ public class Nucleo extends Thread
         int pos_cache = num_bloque % 4;
         int num_palabra = ( context.getPC() - ( num_bloque * 16 ) ) / 4;
         int[] result = {-1,-1,-1,-1};
-        try{
-            semaphoreMiCache.acquire();
-            if(miCacheIns.get(pos_cache).getEtiqueta()==num_bloque){
-                result=miCacheIns.get(pos_cache).getPalabra(num_palabra);
-                context.setPC(context.getPC()+4);
-            }
-            else{ //fallo cache de instrucciones
-                huboFallo = 40;
-                if(busInstrucciones){
-                    try{
-                        semaphoreOtroCache.acquire();
-                        int[][] instrucciones = new int[4][4];
-                        for(int i=0; i<4; i++){
-                            instrucciones[0][i] = memoriaPrincipalInstrucciones[context.getPC()+i];
-                            instrucciones[1][i] = memoriaPrincipalInstrucciones[context.getPC()+i+4];
-                            instrucciones[2][i] = memoriaPrincipalInstrucciones[context.getPC()+i+8];
-                            instrucciones[3][i] = memoriaPrincipalInstrucciones[context.getPC()+i+12];
-                        }
-                        miCacheIns.get(pos_cache).setInstrucciones(instrucciones);
-                        miCacheIns.get(pos_cache).setEtiqueta(num_bloque);
-                    }catch (InterruptedException e) { }finally {semaphoreOtroCache.release();}
+        //try{
+        //semaphoreMiCache.acquire();
+        if(miCacheIns.get(pos_cache).getEtiqueta()==num_bloque){
+            result=miCacheIns.get(pos_cache).getPalabra(num_palabra);
+            context.setPC(context.getPC()+4);
+        }
+        else{ //fallo cache de instrucciones
+            huboFallo = 40;
+            quantum += 40;
+            if(MainThread.busInstrucciones){
+                //try{
+                //semaphoreOtroCache.acquire();
+                MainThread.busInstrucciones = false;
+                int[][] instrucciones = new int[4][4];
+                for(int i=0; i<4; i++){
+                    instrucciones[0][i] = memoriaPrincipalInstrucciones[num_bloque*16+i];
+                    instrucciones[1][i] = memoriaPrincipalInstrucciones[num_bloque*16+i+4];
+                    instrucciones[2][i] = memoriaPrincipalInstrucciones[num_bloque*16+i+8];
+                    instrucciones[3][i] = memoriaPrincipalInstrucciones[num_bloque*16+i+12];
                 }
+                miCacheIns.get(pos_cache).setInstrucciones(instrucciones);
+                miCacheIns.get(pos_cache).setEtiqueta(num_bloque);
+                //}catch (InterruptedException e) { }finally {semaphoreOtroCache.release();}
+                MainThread.busInstrucciones = true;
             }
-        } catch (InterruptedException e) {
+        }
+        //} catch (InterruptedException e) {
 
-        }finally {semaphoreMiCache.release();}
+        //}finally {semaphoreMiCache.release();}
         return result;
     }
 
@@ -399,22 +378,22 @@ public class Nucleo extends Thread
         private int resultado = 0;
         private boolean seLogro = false;
 
-        public ResultadoFalloCahe() {
+        private ResultadoFalloCahe() {
         }
 
-        public int getResultado() {
+        private int getResultado() {
             return resultado;
         }
 
-        public void setResultado(int resultado) {
+        private void setResultado(int resultado) {
             this.resultado = resultado;
         }
 
-        public boolean isSeLogro() {
+        private boolean isSeLogro() {
             return seLogro;
         }
 
-        public void setSeLogro(boolean seLogro) {
+        private void setSeLogro(boolean seLogro) {
             this.seLogro = seLogro;
         }
     }
