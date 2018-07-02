@@ -29,12 +29,13 @@ public class MainThread
     private ArrayList<BloqueCacheDatos> cacheDatosNucleo0;
     private ArrayList<BloqueCacheDatos> cacheDatosNucleo1;
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
-    private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
-    private Nucleo N0, N1;//Los dos nucleos
-    public static Semaphore semaforo, semauxforo;//Semaforos necesarios para la barrera
-    public static Lock[] candadosN0, candadosN1;//Candados para cada bloque de cache en ambos nucleos
+
+    private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1; //Caches para ambos nucleos y sus partes
+    private Nucleo N0, N1; //Los dos nucleos
+    public static Semaphore semaforo, semauxforo; //Semaforos necesarios para la barrera
+    public static Lock[] candadosN0, candadosN1; //Candados para cada bloque de cache en ambos nucleos
     public static Lock candado;
-    public static int enBarrera, tic, modo;//Hilos esperando en la barrera - Tics del reloj - Ejecucion lenta o rapida
+    public static int enBarrera, tic, modo; //Hilos esperando en la barrera - Tics del reloj - Ejecucion lenta o rapida
     public static int reloj = 0; //Por donde va el reloj
     public static int quantum = 1000; //Cantidad de quantum que tiene cada hilillo
     private static boolean rapido = true; //Si el modo rapido esta activado
@@ -68,8 +69,8 @@ public class MainThread
         }
 
         //Nucleo(miCache, otroCache, miCacheIns, memoriaPrincipalInstrucciones, memoriaPrincipalDatos, busDatos, busInstrucciones, numero)
-        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
-        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
+        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,0);
+        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,1);
         semaforo = new Semaphore(0); //Semaforo para pasar la barrera, empieza sin permisos
         semauxforo = new Semaphore(1); //Semaforo para tocar la variable enBarrera
         enBarrera = 0; //Ningun hilo empieza en barrera
@@ -113,7 +114,7 @@ public class MainThread
     }
 
     //Metodo con las primeras interacciones para el usuario
-    private void empezar(){
+    private void empezar() throws InterruptedException {
         System.out.println("Digite el numero segun el modo que desea:\n1. Rapido\n2. Lento");
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String entrada = null;
@@ -158,13 +159,12 @@ public class MainThread
         }
 
         imprimirEstado();
-        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
-        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
+        N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,0);
+        N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,1);
         N0.setContexto(contextoList.get(0)); //El nucleo 0 empezara por el primero de la lista
         N1.setContexto(contextoList.get(1)); //El nucleo 1 empezara por el segundo de la lista
         contextoList.remove(0); //Quita de la lista al primero
         contextoList.remove(0); //Quita de la lista al que antes estaba de segundo
-
         N0.start();
         N1.start();
         N0.join();
@@ -267,22 +267,6 @@ public class MainThread
         }
 
 
-    }
-
-    private void imprimirCacheDatos(ArrayList<BloqueCacheDatos> nucleo) {
-        BloqueCacheDatos bloqueDatosAux;
-        int[] palabrasDatos;
-        for(int i = 0; i < nucleo.size(); i++)
-        {
-            bloqueDatosAux = nucleo.get(i);
-            palabrasDatos = bloqueDatosAux.getPalabras();
-            String bloque = "Bloque " + i + ": | "
-                    + palabrasDatos[0] + " | "
-                    + palabrasDatos[1] + " | "
-                    + palabrasDatos[2] + " | "
-                    + palabrasDatos[3] + " | ";
-            System.out.println(bloque + bloqueDatosAux.getEtiqueta() + " | " + bloqueDatosAux.getEstado() + " |");
-        }
     }
 
     //Imprimir el estado actual de una cache de datos especifica que recibe por parametro

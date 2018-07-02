@@ -20,14 +20,12 @@ public class Nucleo extends Thread
 
     //Constructor de la clase
     public Nucleo(ArrayList<BloqueCacheDatos> miCache, ArrayList<BloqueCacheDatos> otroCache, ArrayList<BloqueCacheInstrucciones> miCacheIns, int[] memoriaPrincipalInstrucciones,
-                  int[] memoriaPrincipalDatos, boolean busDatos, boolean busInstrucciones, int numero){
+                  int[] memoriaPrincipalDatos, int numero){
         this.miCache = miCache;
         this.otroCache = otroCache;
         this.miCacheIns = miCacheIns;
         this.memoriaPrincipalInstrucciones = memoriaPrincipalInstrucciones;
         this.memoriaPrincipalDatos = memoriaPrincipalDatos;
-        //this.busDatos = busDatos;
-        //this.busInstrucciones = busInstrucciones;
         this.numNucleo = numero;
         this.context = new Contexto();
     }
@@ -99,11 +97,11 @@ public class Nucleo extends Thread
 
     //Metodo de cambio de contexto si el hilillo actual termino o se quedo sin quantum
     private void check_thread_state(){
-        if (terminado) {//Hilillo llego a su instruccion final
+        if (terminado) { //Hilillo llego a su instruccion final
             MainThread.contextosCompletados.add(context);
-            if (MainThread.contextoList.size() > 0 ){//Si todavia hay hililloss por ejecutar
-                setContexto(MainThread.contextoList.get(0));//Obtiene el primer contexto en la cola round-robin
-                MainThread.contextoList.remove(context);//Quita el elemento de la cabeza
+            if (MainThread.contextoList.size() > 0 ){ //Si todavia hay hililloss por ejecutar
+                setContexto(MainThread.contextoList.get(0)); //Obtiene el primer contexto en la cola round-robin
+                MainThread.contextoList.remove(context); //Quita el elemento de la cabeza
                 huboFallo = 0;
                 terminado = false;
                 procesar();
@@ -389,6 +387,7 @@ public class Nucleo extends Thread
                 MainThread.busInstrucciones = false;//Intenta bloquear el bloque en la otra cache
                 int[][] instrucciones = new int[4][4];
                 for(int i=0; i<4; i++){//Copia las instrucciones
+
                     instrucciones[0][i] = memoriaPrincipalInstrucciones[num_bloque*16+i];
                     instrucciones[1][i] = memoriaPrincipalInstrucciones[num_bloque*16+i+4];
                     instrucciones[2][i] = memoriaPrincipalInstrucciones[num_bloque*16+i+8];
