@@ -67,7 +67,6 @@ public class Nucleo extends Thread
     }
 
     private void Pasar(){
-        System.out.println("Reloj: " + MainThread.reloj + " Nucleo: " + numNucleo + " Hilo: " + context.getID());
         MainThread.reloj++;
         quantum--;
         check_thread_state();
@@ -77,6 +76,7 @@ public class Nucleo extends Thread
         this.quantum = MainThread.quantum;
         while ( !terminado && quantum > 0) {
             if (huboFallo < 1) {
+                System.out.println("Reloj: " + MainThread.reloj + " Nucleo: " + numNucleo + " Hilo: " + context.getID());
                 if(!MainThread.rapido){
                     try{
                         sleep(200);
@@ -124,9 +124,6 @@ public class Nucleo extends Thread
     }
 
     private void resolverInstruccion(int[] ir){
-        /*if (/*numNucleo == 0 &&ir[0] != -1 && context.getID() == 4) {
-            System.out.println("Nucleo: " + numNucleo + " Hilillo " + context.getID() + " instruccion: " + ir[0] + " | " + ir[1] + " | " + ir[2] + " | " + ir[3]);
-        }*/
         switch (ir[0]){
             case 8:
                 daddi(ir);
@@ -164,7 +161,7 @@ public class Nucleo extends Thread
             case 63:
                 terminado = true;
                 MainThread.hilillos_completados++;
-                System.out.println("\n\n ----- Nucleo " + numNucleo + " termino hilillo " + context.getID() + "------\n");
+                //System.out.println("\n\n ----- Nucleo " + numNucleo + " termino hilillo " + context.getID() + "------\n");
                 break;
             default:
                 //Hubo fallo en cache de instrucciones
