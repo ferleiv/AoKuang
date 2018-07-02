@@ -17,6 +17,8 @@ public class Contexto
     {
         estado = 0;
         registros = new int[32];
+        for(int i = 0; i < 32; i++)
+            registros[i] = 0;
     }
 
     //Getter del identificador de hilillo

@@ -17,8 +17,8 @@ public class MainThread
         posicion=mainThread.leerHilillos("Module\\Hilillos\\3.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\4.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\5.txt",posicion);
-        //mainThread.empezar();
-        mainThread.prueba();
+        mainThread.empezar();
+        //mainThread.prueba();
     }
 
     private int[] memoriaPrincipalDatos;
@@ -156,15 +156,15 @@ public class MainThread
             empezar();
         }
 
-        //imprimirEstado();
+        imprimirEstado();
         N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
         N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
         N0.setContexto(contextoList.get(0)); //El nucleo 0 empezara por el primero de la lista
         N1.setContexto(contextoList.get(1)); //El nucleo 1 empezara por el segundo de la lista
         contextoList.remove(0); //Quita de la lista al primero
         contextoList.remove(0); //Quita de la lista al que antes estaba de segundo
-        N0.start();
-        N1.start(); //Empiezan a correr ambos nucleos
+        //N0.start();
+        //N1.start(); //Empiezan a correr ambos nucleos
     }
 
     private void prueba(){
@@ -254,6 +254,27 @@ public class MainThread
         imprimirCacheDatos(cacheDatosNucleo1);
         System.out.println(" -- Cache de instrucciones del nucleo 1 -- ");
         imprimirCacheInstrucciones(cacheInstruccionesNucleo1);
+
+        //Imprimir contextos de los hilillos
+        System.out.println("--- CONTEXTOS ---");
+        if(contextoList.size() > 0)
+        {
+            System.out.println(" -- Hilillos sin terminar -- ");
+            Contexto contauxto;
+            String strContexto;
+            for(int c = 0; c < contextoList.size(); c++)
+            {
+                contauxto = contextoList.get(c);
+                strContexto = "ID: " + contauxto.getID() + ". PC: " + contauxto.getPC() + ". Regs: | ";
+                for(int r = 0; r < 32; r++)
+                {
+                    strContexto = strContexto + contauxto.getRegistro(r) + " | ";
+                }
+                System.out.println(strContexto);
+            }
+        }
+
+
     }
 
     //Imprimir el estado actual de una cache de datos especifica que recibe por parametro
