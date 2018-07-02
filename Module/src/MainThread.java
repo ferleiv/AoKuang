@@ -6,11 +6,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class MainThread
-{
+{ //Clase del hilo principal
     public static void main(String[] args) throws InterruptedException {
         int posicion=0;
         MainThread mainThread = new MainThread();
-        posicion=mainThread.leerHilillos("Module\\Hilillos\\0.txt",posicion);
+        posicion=mainThread.leerHilillos("Module\\Hilillos\\0.txt",posicion); //Leer cada archivo
         posicion=mainThread.leerHilillos("Module\\Hilillos\\1.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\2.txt",posicion);
         posicion=mainThread.leerHilillos("Module\\Hilillos\\3.txt",posicion);
@@ -19,34 +19,34 @@ public class MainThread
         mainThread.empezar();
     }
 
-    public static int hilillos_completados = 0;
-    private int[] memoriaPrincipalDatos;
-    private int[] memoriaPrincipalInstrucciones;
-    public static ArrayList<Contexto> contextoList;
-    public static ArrayList<Contexto> contextosCompletados;
-    public static boolean busDatos=true;
-    public static boolean busInstrucciones=true;
-    private ArrayList<BloqueCacheDatos> cacheDatosNucleo0;
-    private ArrayList<BloqueCacheDatos> cacheDatosNucleo1;
-    private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo0;
-    private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1;
-    private Nucleo N0, N1;
-    public static Semaphore semaforo, semauxforo;
-    public static Semaphore[] candadosN0, candadosN1;
-    public static Lock candado;
-    public static int enBarrera, tic, modo;
-    public static int reloj = 0;
-    public static int quantum = 1000;
-    public static boolean rapido = true;
+    public static int hilillos_completados = 0; //Cantidad de hilillos que han terminado su ejecucion
+    private int[] memoriaPrincipalDatos; //Memoria principal de datos
+    private int[] memoriaPrincipalInstrucciones; //Memoria principal de instrucciones
+    public static ArrayList<Contexto> contextoList; //Cola de contextos con logica round-robin
+    public static ArrayList<Contexto> contextosCompletados; //Lista de contextos de los hilillos completados
+    public static boolean busDatos=true; //Bus de datos
+    public static boolean busInstrucciones=true; //Bus de instrucciones
+    private ArrayList<BloqueCacheDatos> cacheDatosNucleo0; //Cache de datos para el nucleo 0
+    private ArrayList<BloqueCacheDatos> cacheDatosNucleo1; //Cache de datos para el nucleo 1
+    private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo0; //Cache de instrucciones para el nucleo 0
+    private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1; //Cache de instrucciones para el nucleo 1
+    private Nucleo N0, N1; //Nucleos que van a correr
+    public static Semaphore semaforo, semauxforo; //Semaforos para la barrera
+    public static Semaphore[] candadosN0, candadosN1; //Candados para cada bloque en cada cache
+    public static int enBarrera, tic, modo; //Hilis en barrera, tics, modo rapido o lento
+    public static int reloj = 0; //Reloj
+    public static int quantum = 1000; //Tamanyo del quantum
+    public static boolean rapido = true; //Si es modo rapido o no
 
+    //Constructor que inicializa los elementos de la simulacion
     public MainThread() {
         memoriaPrincipalDatos = new int[96];
         memoriaPrincipalInstrucciones = new int[640];
 
         for (int i = 0; i < memoriaPrincipalInstrucciones.length; i++)
-            memoriaPrincipalInstrucciones[i] = 1;
+            memoriaPrincipalInstrucciones[i] = 1; //Inicializa memorias con 1
         for (int i = 0; i < memoriaPrincipalDatos.length; i++)
-            memoriaPrincipalDatos[i] = 1;
+            memoriaPrincipalDatos[i] = 1; //Inicializa memorias con 1
         contextoList = new ArrayList<Contexto>();
         contextosCompletados = new ArrayList<Contexto>();
         cacheDatosNucleo0 = new ArrayList<BloqueCacheDatos>();
@@ -54,7 +54,7 @@ public class MainThread
         cacheInstruccionesNucleo0 = new ArrayList<BloqueCacheInstrucciones>();
         cacheInstruccionesNucleo1 = new ArrayList<BloqueCacheInstrucciones>();
 
-        //initCacheDatos(); //para inicializar cache datos con valores manualmente
+        //Para inicializar caches
         for (int i = 0; i < 4; i++) {
             BloqueCacheInstrucciones bloqueIns1 = new BloqueCacheInstrucciones();
             BloqueCacheInstrucciones bloqueIns2 = new BloqueCacheInstrucciones();
@@ -69,9 +69,9 @@ public class MainThread
         //Nucleo(miCache, otroCache, miCacheIns, memoriaPrincipalInstrucciones, memoriaPrincipalDatos, busDatos, busInstrucciones, numero)
         N0 = new Nucleo(cacheDatosNucleo0,cacheDatosNucleo1,cacheInstruccionesNucleo0,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,0);
         N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
-        semaforo = new Semaphore(0);
+        semaforo = new Semaphore(0); //El semaforo de la barrera no empieza con permisos
         semauxforo = new Semaphore(1);
-        enBarrera = 0;
+        enBarrera = 0; //No empiezan hilos en barrera
         tic = 0;
         candadosN0 = new Semaphore[4];
         candadosN1 = new Semaphore[4];
@@ -81,6 +81,7 @@ public class MainThread
             candadosN1[i] = new Semaphore(1);
     }
 
+    //Metodo para leer cada hilillo
     private int leerHilillos (String ruta, int posicionMemInstr){
         Contexto contexto = new Contexto();
         contexto.setPC(posicionMemInstr);
