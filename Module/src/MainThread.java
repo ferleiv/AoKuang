@@ -84,16 +84,16 @@ public class MainThread
     //Metodo para leer cada hilillo
     private int leerHilillos (String ruta, int posicionMemInstr){
         Contexto contexto = new Contexto();
-        contexto.setPC(posicionMemInstr);
+        contexto.setPC(posicionMemInstr); //Su primera instruccion esta donde se empieza a guardar
         contexto.setID(Integer.parseInt(""+ruta.charAt(ruta.length() - 5)));
         try {
             BufferedReader br = new BufferedReader(new FileReader(ruta));
             StringBuilder sb = new StringBuilder();
-            String line = br.readLine();
+            String line = br.readLine(); //Lee un reglon = una instruccion
 
-            while (line != null) {
-                String[] data = line.split(" ");
-                for(int i = 0; i < data.length ; i++){
+            while (line != null) { //Mientras haya instrucciones
+                String[] data = line.split(" "); //Cada numero va separado por espacios
+                for(int i = 0; i < data.length ; i++){ //Cada numero va en una posicion de memoria
                     memoriaPrincipalInstrucciones[posicionMemInstr]=Integer.parseInt(data[i]);
                     posicionMemInstr++;
                 }
@@ -107,24 +107,25 @@ public class MainThread
         } catch (IOException e) {
             e.printStackTrace();
         }
-        contextoList.add(contexto);
-        return posicionMemInstr;
+        contextoList.add(contexto); //Agrega el conetxto a la cola
+        return posicionMemInstr; //Retorna donde termina que es donde va a empezar el proximo hilillo
     }
 
+    //Metodo con las primeras interacciones para el usuario
     private void empezar() throws InterruptedException {
         System.out.println("Digite el numero segun el modo que desea:\n1. Rapido\n2. Lento");
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); //Para leer de consola
         String entrada = null;
         try {
-            entrada = br.readLine();
+            entrada = br.readLine(); //Lee lo que digite el usuario
         } catch (IOException e) {
             e.printStackTrace();
         }
         try{
-            modo = Integer.parseInt(entrada);
+            modo = Integer.parseInt(entrada); //Intenta convertirlo en entero
         }catch(NumberFormatException nfe){
             System.err.println("Formato invalido");
-            empezar();
+            empezar(); //Si el formato esta mal, vuelve a solicitar el numero
         }
         switch (modo)
         {
@@ -135,78 +136,67 @@ public class MainThread
                 System.out.println("Modo lento seleccionado");
                 rapido=false;
                 break;
-            default:
+            default: //El formato es valido, pero no es un numero solicitado
                 System.err.println("Debe digitar 1 o 2");
                 empezar();
                 break;
         }
 
         System.out.println("Digite el valor para el quantum que desea:");
-        BufferedReader br2 = new BufferedReader(new InputStreamReader(System.in));
+        BufferedReader br2 = new BufferedReader(new InputStreamReader(System.in)); //Lee de consola nuevamente
         String entradaQuantum = null;
         try {
-            entradaQuantum = br2.readLine();
+            entradaQuantum = br2.readLine(); //Lee el valor
         } catch (IOException e) {
             e.printStackTrace();
         }
         try{
-            quantum = Integer.parseInt(entradaQuantum);
+            quantum = Integer.parseInt(entradaQuantum); //Convierte a entero
         }catch(NumberFormatException nfe){
             System.err.println("Formato invalido");
             empezar();
         }
 
         //imprimirEstado();
-        N0.setContexto(contextoList.get(0));
-        N1.setContexto(contextoList.get(1));
-        contextoList.remove(0);
-        contextoList.remove(0);
-        N0.start();
-        N1.start();
-        N0.join();
-        N1.join();
+        N0.setContexto(contextoList.get(0)); //El nucleo 0 empezara por el primero de la lista
+        N1.setContexto(contextoList.get(1)); //El nucleo 1 empezara por el primero de la lista
+        contextoList.remove(0); //Quita de la lista al primero
+        contextoList.remove(0); //Quita de la lista al que antes estaba de segundo
+        N0.start(); //Empieza a correr el nucleo 0
+        N1.start(); //Empieza a correr el nucleo 1
+        N0.join(); //Volver a unir el hilo del nucleo 0 al principal
+        N1.join(); //Volver a unir el hilo del nucleo 1 al principal
         imprimirEstado();
     }
 
-    private void prueba() throws InterruptedException {
-        N0.setContexto(contextoList.get(0));
-        N1.setContexto(contextoList.get(1));
-        contextoList.remove(0);
-        contextoList.remove(0);
-        N0.start();
-        N1.start();
-        N0.join();
-        N1.join();
-        System.out.print("Contextos completados: " + contextosCompletados.size() + "\n");
-    }
-
+    //Muestra el estado actual del sistema
     public void imprimirEstado(){
         System.out.println("--- MEMORIA PRINCIPAL ---");
         System.out.println(" -- Memoria de datos -- ");
-        int posMemDatos = 0;
-        for(int i = 0; i < 24; i++)
+        int posMemDatos = 0; //Posicion en memoria de datos
+        for(int i = 0; i < 24; i++) //Tiene 24 bloques
         {
             String bloque = "Bloque " + i + ":  | ";
-            for(int j = 0; j < 4; j++, posMemDatos++)
+            for(int j = 0; j < 4; j++, posMemDatos++) //Cada bloque tiene 4 palabras
             {
-                bloque = bloque + memoriaPrincipalDatos[posMemDatos] + " | "; //TODO: Cambiar posMemDatos por memoriaPrincipalDatos[posMemDatos]
+                bloque = bloque + memoriaPrincipalDatos[posMemDatos] + " | ";
             }
-            System.out.println(bloque);
+            System.out.println(bloque); //Imprime un renglon correspondiente a este bloque
         }
         System.out.println(" -- Memoria de intrucciones -- ");
-        int posMemInst = 0;
-        for(int i = 0; i < 40; i++)
+        int posMemInst = 0; //Posicion en memoria de instrucciones
+        for(int i = 0; i < 40; i++) //Tiene 40 bloque en total
         {
             String bloque = "Bloque " + i + ":";
-            for(int j = 0; j < 4; j++)
+            for(int j = 0; j < 4; j++) //Cada bloque tiene 4 instrucciones
             {
                 bloque = bloque + "\n\tInstruccion " + j + ": | ";
-                for(int k = 0; k < 4; k++, posMemInst++)
+                for(int k = 0; k < 4; k++, posMemInst++) //Cada instruccion tiene 4 numeros
                 {
                     bloque = bloque + memoriaPrincipalInstrucciones[posMemInst] + " | "; //TODO: Cambiar posMemInst por memoriaPrincipalInstrucciones[posMemInst]
                 }
             }
-            System.out.println(bloque);
+            System.out.println(bloque); //Imprime string de multiples lineas de este bloque
         }
 
         System.out.println("--- CACHES ---");
@@ -222,9 +212,9 @@ public class MainThread
     }
 
     private void imprimirCacheDatos(ArrayList<BloqueCacheDatos> nucleo) {
-        BloqueCacheDatos bloqueDatosAux;
-        int[] palabrasDatos;
-        for(int i = 0; i < nucleo.size(); i++)
+        BloqueCacheDatos bloqueDatosAux; //Bloque de datos auxiliar
+        int[] palabrasDatos; //Arreglo para las palabras del bloque
+        for(int i = 0; i < nucleo.size(); i++) //Imprime cada bloque
         {
             bloqueDatosAux = nucleo.get(i);
             palabrasDatos = bloqueDatosAux.getPalabras();
@@ -232,15 +222,15 @@ public class MainThread
                     + palabrasDatos[0] + " | "
                     + palabrasDatos[1] + " | "
                     + palabrasDatos[2] + " | "
-                    + palabrasDatos[3] + " | ";
+                    + palabrasDatos[3] + " | "; //Arma el string del renglon de este bloque
             System.out.println(bloque + bloqueDatosAux.getEtiqueta() + " | " + bloqueDatosAux.getEstado() + " |");
         }
     }
 
     private void imprimirCacheInstrucciones(ArrayList<BloqueCacheInstrucciones> nucleo) {
-        BloqueCacheInstrucciones bloqueInsAux;
-        int[][] palabrasInst;
-        for(int i = 0; i < nucleo.size(); i++)
+        BloqueCacheInstrucciones bloqueInsAux; //Bloque de instrucciones auxiliar
+        int[][] palabrasInst; //Matriz para las instrucciones de este bloque y sus numeros
+        for(int i = 0; i < nucleo.size(); i++) //Explora cada bloque
         {
             bloqueInsAux = nucleo.get(i);
             palabrasInst = bloqueInsAux.getInstrucciones();
@@ -253,7 +243,7 @@ public class MainThread
                         + palabrasInst[j][0] + " | "
                         + palabrasInst[j][1] + " | "
                         + palabrasInst[j][2] + " | "
-                        + palabrasInst[j][3] + " | ";
+                        + palabrasInst[j][3] + " | "; //Monta el renglon de esta instruccion
                 System.out.println(bloque);
             }
         }
@@ -262,11 +252,11 @@ public class MainThread
     private void imprimirContextos(){
         //Imprimir contextos de los hilillos
         System.out.println("--- CONTEXTOS ---");
-        Contexto contauxto;
+        Contexto contauxto; //Contexto auxiliar
         String strContexto;
         ArrayList<Contexto> listaTemporal = new ArrayList<Contexto>();
 
-        if(contextoList.size() > 0){
+        if(contextoList.size() > 0){ //Si todavia hay hilillos esperando ejecutarse
             System.out.println(" -- Hilillos sin terminar -- ");
             listaTemporal = contextoList;
         }else{
@@ -274,7 +264,7 @@ public class MainThread
             listaTemporal = contextosCompletados;
         }
 
-        for(int c = 0; c < listaTemporal.size(); c++){
+        for(int c = 0; c < listaTemporal.size(); c++){ //Por cada hilillo en la lista
             contauxto = listaTemporal.get(c);
             strContexto = "ID: " + contauxto.getID() + ". PC: " + contauxto.getPC() + ". Regs: | ";
             for(int r = 0; r < 32; r++)
