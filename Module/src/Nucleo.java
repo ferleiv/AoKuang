@@ -4,14 +4,13 @@ import java.util.concurrent.Semaphore;
 public class Nucleo extends Thread
 {   //Clase que representa un nucleo de ejecucion, usan un hilo
     private int numNucleo;
-
     private ArrayList<BloqueCacheDatos> miCache; //Cache de datos propia
     private ArrayList<BloqueCacheDatos> otroCache; //La cache del otro nucleo por si hace falta cambiar o bloquear algo
     private ArrayList<BloqueCacheInstrucciones> miCacheIns; //Cache de instrucciones propia para saber por donde va
     private int[] memoriaPrincipalInstrucciones; //Memoria para traer las instrucciones en los fallos
     private int[] memoriaPrincipalDatos; //Memoria compartida de los datos con el estado mas reciente
-    private boolean busDatos; //Bus de datos del sistema el cual solo esta ocupado o desocupado
-    private boolean busInstrucciones; //Bus de instrucciones del sistema que funciona similar
+    //private boolean busDatos; //Bus de datos del sistema el cual solo esta ocupado o desocupado
+    //private boolean busInstrucciones; //Bus de instrucciones del sistema que funciona similar
     private Semaphore semaphoreMiCache = new Semaphore(1);
     private Semaphore semaphoreOtroCache = new Semaphore(1);
     private Contexto context; //Contexto del hilillo que se va a procesar
@@ -27,8 +26,8 @@ public class Nucleo extends Thread
         this.miCacheIns = miCacheIns;
         this.memoriaPrincipalInstrucciones = memoriaPrincipalInstrucciones;
         this.memoriaPrincipalDatos = memoriaPrincipalDatos;
-        this.busDatos = busDatos;
-        this.busInstrucciones = busInstrucciones;
+        //this.busDatos = busDatos;
+        //this.busInstrucciones = busInstrucciones;
         this.numNucleo = numero;
         this.context = new Contexto();
     }
@@ -36,7 +35,6 @@ public class Nucleo extends Thread
     //Metodo que corre cuando a la instancia s le hace start()
     public void run() {
         procesar();
-        //Barrera();
     }
 
     //Metodo de la barrera para sincronizar cada tic del reloj
@@ -50,7 +48,7 @@ public class Nucleo extends Thread
         MainThread.enBarrera++; //Hay uno mas esperando en la barrera
         if(MainThread.enBarrera == 2) //Verifica si ya son dos o es el primer hilo en entrar
         {
-            //System.out.println("Ahora somos 2 " + numNucleo);
+            MainThread.semauxforo.release();
             MainThread.enBarrera = 0;
             MainThread.semauxforo.release(); //Ya puede liberar la seccion critica con enBarrera
             MainThread.semaforo.release(1); //Concede un permiso para que el otro hilo tambien pueda pasar
@@ -60,7 +58,6 @@ public class Nucleo extends Thread
         }
         else
         {
-            //System.out.println("Espero :( " + numNucleo);
             MainThread.semauxforo.release(); //Libera seccion critica con enBarrera
             synchronized (MainThread.semaforo)
             {
@@ -71,11 +68,9 @@ public class Nucleo extends Thread
                     e.printStackTrace();
                 }
             }
-            //Pasar();
-            check_thread_state();
         }
+        check_thread_state();
     }
-
     //Metodo que unicamente se llama en Barrera cuando ambos hilos estan listos para pasar
     private void Pasar(){
         try {
@@ -83,6 +78,9 @@ public class Nucleo extends Thread
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        MainThread.reloj++;
+        quantum--;
+        check_thread_state();
     }
 
     //Metodo que se llama para vigilar si el hilillo no ha terminado y todavia tiene quantum para ser procesado
@@ -91,21 +89,27 @@ public class Nucleo extends Thread
         while ( !terminado && quantum > 0) {//debe agregarse tambien el fin por quantum
             if (huboFallo < 1) { //No hay fallo
                 resolverInstruccion(siguienteInstruccion());
-            } else huboFallo=0;//huboFallo--;
-            Barrera();
+            } else huboFallo--;
+            if (MainThread.hilillos_completados < 5) {
+                Barrera();
+            } else Pasar();
         }
         Barrera();
     }
 
     //Metodo de cambio de contexto si el hilillo actual termino o se quedo sin quantum
     private void check_thread_state(){
-        if (terminado) { //Hilillo llego a su instruccion final
-            if (MainThread.contextoList.size() > 0 ){ //Si todavia hay hililloss por ejecutar
-                setContexto(MainThread.contextoList.get(0)); //Obtiene el primer contexto en la cola round-robin
-                MainThread.contextoList.remove(context); //Quita el elemento de la cabeza
+        if (terminado) {//Hilillo llego a su instruccion final
+            MainThread.contextosCompletados.add(context);
+            if (MainThread.contextoList.size() > 0 ){//Si todavia hay hililloss por ejecutar
+                setContexto(MainThread.contextoList.get(0));//Obtiene el primer contexto en la cola round-robin
+                MainThread.contextoList.remove(context);//Quita el elemento de la cabeza
                 huboFallo = 0;
                 terminado = false;
                 procesar();
+            } else {
+                MainThread.semauxforo.release();
+                MainThread.semaforo.release(1);
             }
         }
         if (quantum < 1) { //Se le acabo el quantum
@@ -127,9 +131,10 @@ public class Nucleo extends Thread
         context = contexto;
     }
 
-    //Metodo que toma el primer numero de la instruccion para saber de cual se trata y lo que debe hacer
     private void resolverInstruccion(int[] ir){
-        System.out.println("Nucleo: " + numNucleo + " instruccion: " + ir[0]+" | "+ir[1]+" | "+ir[2]+" | "+ir[3]);
+        /*if (/*numNucleo == 0 &&ir[0] != -1 && context.getID() == 4) {
+            System.out.println("Nucleo: " + numNucleo + " Hilillo " + context.getID() + " instruccion: " + ir[0] + " | " + ir[1] + " | " + ir[2] + " | " + ir[3]);
+        }*/
         switch (ir[0]){
             case 8: //8 = DADDI
                 daddi(ir);
@@ -166,7 +171,8 @@ public class Nucleo extends Thread
                 break;
             case 63: //63 = Terminar
                 terminado = true;
-                System.out.println("\n\n ----- Nucleo " + numNucleo + " termino un hilo ------\n");
+                MainThread.hilillos_completados++;
+                System.out.println("\n\n ----- Nucleo " + numNucleo + " termino hilillo " + context.getID() + "------\n");
                 break;
             default:
                 //Hubo fallo en cache de instrucciones
@@ -238,17 +244,20 @@ public class Nucleo extends Thread
         if (target.getEtiqueta() > -1 && target.getEstado() < 2 ) {
             context.setRegistro( rd, target.getPalabras()[num_palabra]);
         } else falloCahe = falloCacheLw(num_bloque,num_palabra,pos_cache);
-        if(falloCahe.seLogro){ context.setRegistro( rd, falloCahe.resultado);}
-        else context.setPC(context.getPC()-4);//no consiguio algo, se devuelve una instruccion para volver a empezar
+        if (huboFallo > 0) {
+            if (falloCahe.seLogro) {
+                context.setRegistro(rd, falloCahe.resultado);
+            } else
+                context.setPC(context.getPC() - 4);//no consiguio algo, se devuelve una instruccion para volver a empezar
+        }
     }
 
-    //Metodo que se ejecuta cuando ocurre un fallo de cache en un LW
     private ResultadoFalloCahe falloCacheLw(int bloque, int palabra, int posicionEnCache){
         huboFallo = 40;
         quantum += 40;
         ResultadoFalloCahe resultado = new ResultadoFalloCahe();
-        if(busDatos){ //Bus de datos disponible
-            busDatos =false; //Ahora el bus esta ocupado
+        if(MainThread.busDatos){ //Bus de datos disponible
+            MainThread.busDatos =false; //Ahora el bus esta ocupado
             if(miCache.get(posicionEnCache).getEstado()==1){//1 es modificado
                 guardarBloqueEnMemoria(miCache.get(posicionEnCache).getEtiqueta(), true);
             }
@@ -264,7 +273,7 @@ public class Nucleo extends Thread
             resultado.setResultado(miCache.get(posicionEnCache).getPalabras()[palabra]);
         }
         else {resultado.setSeLogro(false);}
-        busDatos =true; //Desocupa el bus de datos
+        MainThread.busDatos =true; //Desocupa el bus de datos
         return resultado;
     }
 
@@ -292,8 +301,8 @@ public class Nucleo extends Thread
         huboFallo = 40;
         quantum += 40;
         boolean resultado=false;
-        if(busDatos){ //Bus de datos disponible
-            busDatos =false; //Bus ahora ocupado
+        if(MainThread.busDatos){ //Bus de datos disponible
+            MainThread.busDatos =false; //Bus ahora ocupado
             if(miCache.get(posicionEnCache).getEstado()==1){//1 es modificado
                 guardarBloqueEnMemoria(miCache.get(posicionEnCache).getEtiqueta(), true);
             }
@@ -308,7 +317,7 @@ public class Nucleo extends Thread
             catch(InterruptedException e){}finally {semaphoreOtroCache.release();} //Libera la posicion
             resultado=true;
         }
-        busDatos =true; //Libera el bus
+        MainThread.busDatos =true; //Libera el bus
         return resultado;
     }
 
@@ -365,33 +374,35 @@ public class Nucleo extends Thread
         int pos_cache = num_bloque % 4;
         int num_palabra = ( context.getPC() - ( num_bloque * 16 ) ) / 4;
         int[] result = {-1,-1,-1,-1};
-        try{
-            semaphoreMiCache.acquire(); //Bloque la posicion de cache
-            if(miCacheIns.get(pos_cache).getEtiqueta()==num_bloque){ //La instruccion esta en cache
-                result=miCacheIns.get(pos_cache).getPalabra(num_palabra);
-                context.setPC(context.getPC()+4);
-            }
-            else{ //fallo cache de instrucciones
-                huboFallo = 40;
-                quantum += 40;
-                if(busInstrucciones){ //Bus de instrucciones disponible
-                    try{
-                        semaphoreOtroCache.acquire(); //Intenta bloquear el bloque en la otra cache
-                        int[][] instrucciones = new int[4][4];
-                        for(int i=0; i<4; i++){ //Copia las instrucciones
-                            instrucciones[0][i] = memoriaPrincipalInstrucciones[context.getPC()+i];
-                            instrucciones[1][i] = memoriaPrincipalInstrucciones[context.getPC()+i+4];
-                            instrucciones[2][i] = memoriaPrincipalInstrucciones[context.getPC()+i+8];
-                            instrucciones[3][i] = memoriaPrincipalInstrucciones[context.getPC()+i+12];
-                        }
-                        miCacheIns.get(pos_cache).setInstrucciones(instrucciones);
-                        miCacheIns.get(pos_cache).setEtiqueta(num_bloque);
-                    }catch (InterruptedException e) { }finally {semaphoreOtroCache.release();} //Libera el otro nucleo
+        //try{
+        //semaphoreMiCache.acquire();
+        if(miCacheIns.get(pos_cache).getEtiqueta()==num_bloque){
+            result=miCacheIns.get(pos_cache).getPalabra(num_palabra);
+            context.setPC(context.getPC()+4);
+        }
+        else{ //fallo cache de instrucciones
+            huboFallo = 40;
+            quantum += 40;
+            if(MainThread.busInstrucciones){//Bus de instrucciones disponible
+                //try{
+                //semaphoreOtroCache.acquire();
+                MainThread.busInstrucciones = false;//Intenta bloquear el bloque en la otra cache
+                int[][] instrucciones = new int[4][4];
+                for(int i=0; i<4; i++){//Copia las instrucciones
+                    instrucciones[0][i] = memoriaPrincipalInstrucciones[num_bloque*16+i];
+                    instrucciones[1][i] = memoriaPrincipalInstrucciones[num_bloque*16+i+4];
+                    instrucciones[2][i] = memoriaPrincipalInstrucciones[num_bloque*16+i+8];
+                    instrucciones[3][i] = memoriaPrincipalInstrucciones[num_bloque*16+i+12];
                 }
+                miCacheIns.get(pos_cache).setInstrucciones(instrucciones);
+                miCacheIns.get(pos_cache).setEtiqueta(num_bloque);
+                //}catch (InterruptedException e) { }finally {semaphoreOtroCache.release();}
+                MainThread.busInstrucciones = true;
             }
-        } catch (InterruptedException e) {
+        }
+        //} catch (InterruptedException e) {
 
-        }finally {semaphoreMiCache.release();} //Bloque la cache propia
+        //}finally {semaphoreMiCache.release();} //Bloque la cache propia
         return result;
     }
 
