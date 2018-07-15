@@ -20,14 +20,14 @@ public class MainThread
     }
 
     public static int hilillos_completados = 0; //Cantidad de hilillos que han terminado su ejecucion
-    private int[] memoriaPrincipalDatos; //Memoria principal de datos
+    private static int[] memoriaPrincipalDatos; //Memoria principal de datos
     private int[] memoriaPrincipalInstrucciones; //Memoria principal de instrucciones
     public static ArrayList<Contexto> contextoList; //Cola de contextos con logica round-robin
     public static ArrayList<Contexto> contextosCompletados; //Lista de contextos de los hilillos completados
     public static boolean busDatos=true; //Bus de datos
     public static boolean busInstrucciones=true; //Bus de instrucciones
-    private ArrayList<BloqueCacheDatos> cacheDatosNucleo0; //Cache de datos para el nucleo 0
-    private ArrayList<BloqueCacheDatos> cacheDatosNucleo1; //Cache de datos para el nucleo 1
+    private static ArrayList<BloqueCacheDatos> cacheDatosNucleo0; //Cache de datos para el nucleo 0
+    private static ArrayList<BloqueCacheDatos> cacheDatosNucleo1; //Cache de datos para el nucleo 1
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo0; //Cache de instrucciones para el nucleo 0
     private ArrayList<BloqueCacheInstrucciones> cacheInstruccionesNucleo1; //Cache de instrucciones para el nucleo 1
     private Nucleo N0, N1; //Nucleos que van a correr
@@ -37,6 +37,10 @@ public class MainThread
     public static int reloj = 0; //Reloj
     public static int quantum = 1000; //Tamanyo del quantum
     public static boolean rapido = true; //Si es modo rapido o no
+    public static int ciclos = 0; //Cantidad de ciclos para el modo lento
+    public static int pasadas = 0; //Veces que se pasa por ModoLento dependiendo de si queda 1 hilo o siguen los 2
+    public static int pasadasHechas = 0;
+    public static Semaphore modoforo;
 
     //Constructor que inicializa los elementos de la simulacion
     public MainThread() {
@@ -71,6 +75,7 @@ public class MainThread
         N1 = new Nucleo(cacheDatosNucleo1,cacheDatosNucleo0,cacheInstruccionesNucleo1,memoriaPrincipalInstrucciones,memoriaPrincipalDatos,busDatos,busInstrucciones,1);
         semaforo = new Semaphore(0); //El semaforo de la barrera no empieza con permisos
         semauxforo = new Semaphore(1);
+        modoforo = new Semaphore(1);
         enBarrera = 0; //No empiezan hilos en barrera
         tic = 0;
         candadosN0 = new Semaphore[4];
@@ -134,7 +139,21 @@ public class MainThread
                 break;
             case 2:
                 System.out.println("Modo lento seleccionado");
-                rapido=false;
+                rapido = false;
+                System.out.println("Digite la cantidad de ciclos que quiere que pasen por pausa:");
+                BufferedReader br3 = new BufferedReader(new InputStreamReader(System.in)); //Lee de consola nuevamente
+                String entradaCiclos = null;
+                try {
+                    entradaCiclos = br3.readLine(); //Lee el valor
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try{
+                    ciclos = Integer.parseInt(entradaCiclos); //Convierte a entero
+                }catch(NumberFormatException nfe){
+                    System.err.println("Formato invalido");
+                    System.exit(1);
+                }
                 break;
             default: //El formato es valido, pero no es un numero solicitado
                 System.err.println("Debe digitar 1 o 2");
@@ -170,7 +189,8 @@ public class MainThread
     }
 
     //Muestra el estado actual del sistema
-    public void imprimirEstado(){
+    public static void imprimirEstado(){
+        System.out.println("RELOJ: " + reloj);
         System.out.println("--- MEMORIA PRINCIPAL ---");
         System.out.println(" -- Memoria de datos -- ");
         int posMemDatos = 0; //Posicion en memoria de datos
@@ -211,7 +231,7 @@ public class MainThread
         imprimirContextos();
     }
 
-    private void imprimirCacheDatos(ArrayList<BloqueCacheDatos> nucleo) {
+    private static void imprimirCacheDatos(ArrayList<BloqueCacheDatos> nucleo) {
         BloqueCacheDatos bloqueDatosAux; //Bloque de datos auxiliar
         int[] palabrasDatos; //Arreglo para las palabras del bloque
         for(int i = 0; i < nucleo.size(); i++) //Imprime cada bloque
@@ -249,22 +269,36 @@ public class MainThread
         }
     }
 
-    private void imprimirContextos(){
+    private static void imprimirContextos(){
         //Imprimir contextos de los hilillos
         System.out.println("--- CONTEXTOS ---");
+        System.out.println("NOTA: Si algun hilillo no aparece es porque esta siendo ejecutado actualmente");
         Contexto contauxto; //Contexto auxiliar
         String strContexto;
         ArrayList<Contexto> listaTemporal = new ArrayList<Contexto>();
 
-        if(contextoList.size() > 0){ //Si todavia hay hilillos esperando ejecutarse
+        if(contextoList.size() > 0)
+        { //Si todavia hay hilillos esperando ejecutarse
             System.out.println(" -- Hilillos sin terminar -- ");
             listaTemporal = contextoList;
-        }else{
-            System.out.println(" -- Hilillos terminados -- ");
-            listaTemporal = contextosCompletados;
+            imprimirListaContextos(listaTemporal);
         }
 
-        for(int c = 0; c < listaTemporal.size(); c++){ //Por cada hilillo en la lista
+        if(contextosCompletados.size() > 0)
+        {
+            System.out.println(" -- Hilillos terminados -- ");
+            listaTemporal = contextosCompletados;
+            imprimirListaContextos(listaTemporal);
+        }
+
+
+    }
+
+    private static void imprimirListaContextos(ArrayList<Contexto> listaTemporal) {
+        Contexto contauxto;
+        String strContexto;
+        for(int c = 0; c < listaTemporal.size(); c++)
+        { //Por cada hilillo en la lista
             contauxto = listaTemporal.get(c);
             strContexto = "ID: " + contauxto.getID() + ". PC: " + contauxto.getPC() + ". Regs: | ";
             for(int r = 0; r < 32; r++)
@@ -275,4 +309,34 @@ public class MainThread
         }
     }
 
+    public static void modoLento()
+    {
+        try {
+            modoforo.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if(hilillos_completados < 5) //Todavia estan los dos hilillos
+            pasadas = ciclos * 2; //
+        else
+            pasadas = ciclos;
+        pasadasHechas++;
+
+        if(pasadasHechas == pasadas)
+        {
+            System.out.println("Estado actual del sistema:");
+            imprimirEstado();
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); //Lee de consola nuevamente
+            System.out.println("Escriba cualquier cosa para continuar:");
+            try {
+                br.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            pasadasHechas = 0;
+        }
+
+        modoforo.release();
+    }
 }

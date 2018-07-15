@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
@@ -35,6 +36,8 @@ public class Nucleo extends Thread
 
     //Barrera en la que ambos hilos se encuentran en cada tic del reloj
     private void Barrera(){
+        if(!MainThread.rapido)
+            MainThread.modoLento();
         try {
             MainThread.semauxforo.acquire(); //Semaforo para evitar race conditions con la variable enBarrera
         } catch (InterruptedException e) {
@@ -46,7 +49,7 @@ public class Nucleo extends Thread
             MainThread.semauxforo.release(); //Se termina la seccion critica con enBarrera
             MainThread.enBarrera = 0; //Al ser 2 ya pueden pasar, entonces se devuelve a 0
             MainThread.semaforo.release(1); //Se da un permiso para que el otro pase
-            System.out.println("Reloj: " + MainThread.reloj + " Nucleo: " + numNucleo + " Hilo: " + context.getID());
+            //System.out.println("Reloj: " + MainThread.reloj + " Nucleo: " + numNucleo + " Hilo: " + context.getID());
             MainThread.reloj++; //Ha pasado un tic
             quantum--; //Se ha gastado uno de quantum
         }
@@ -68,6 +71,8 @@ public class Nucleo extends Thread
 
     //Se llama cuando no es necesario pasar por la barrera pues solo queda un hilo en ejecucion
     private void Pasar(){
+        if(!MainThread.rapido)
+            MainThread.modoLento();
         MainThread.reloj++;
         quantum--;
         check_thread_state();
@@ -78,13 +83,15 @@ public class Nucleo extends Thread
         this.quantum = MainThread.quantum; //Quantum restante
         while ( !terminado && quantum > 0) { //Si no ha terminado y todavia tiene quantum
             if (huboFallo < 1) { //Por si todavia quedan ciclos que deba pasar en fallo
+                /*
                 if(!MainThread.rapido){
                     try{
-                        sleep(200);
+                        sleep(100);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
+                */
                 resolverInstruccion(siguienteInstruccion());
             } else huboFallo--; //Un ciclo en fallo menos
             if (MainThread.hilillos_completados < 5) { //Verifica si todavia el otro nucleo tiene trabajo
@@ -353,12 +360,10 @@ public class Nucleo extends Thread
         }else{
             palabras = otroCache.get(posicionBloqueCache).getPalabras();
         }
-        for(int i = 0; i < 4; i++) { //Escribe el bloque en memoria
-            memoriaPrincipalDatos[posicionBloqueMemoria] = palabras[0];
-            memoriaPrincipalDatos[posicionBloqueMemoria+1] = palabras[1];
-            memoriaPrincipalDatos[posicionBloqueMemoria+2] = palabras[2];
-            memoriaPrincipalDatos[posicionBloqueMemoria+3] = palabras[3];
-        }
+        memoriaPrincipalDatos[posicionBloqueMemoria] = palabras[0];
+        memoriaPrincipalDatos[posicionBloqueMemoria+1] = palabras[1];
+        memoriaPrincipalDatos[posicionBloqueMemoria+2] = palabras[2];
+        memoriaPrincipalDatos[posicionBloqueMemoria+3] = palabras[3];
     }
 
     //Se trae un bloque desde la memoria principal
