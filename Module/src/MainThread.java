@@ -183,7 +183,7 @@ public class MainThread
             }
             System.out.println(bloque); //Imprime un renglon correspondiente a este bloque
         }
-        System.out.println(" -- Memoria de intrucciones -- ");
+        /*System.out.println(" -- Memoria de intrucciones -- ");
         int posMemInst = 0; //Posicion en memoria de instrucciones
         for(int i = 0; i < 40; i++) //Tiene 40 bloque en total
         {
@@ -197,17 +197,17 @@ public class MainThread
                 }
             }
             System.out.println(bloque); //Imprime string de multiples lineas de este bloque
-        }
+        }*/
 
         System.out.println("--- CACHES ---");
         System.out.println(" -- Cache de datos del nucleo 0 -- ");
         imprimirCacheDatos(cacheDatosNucleo0);
-        System.out.println(" -- Cache de instrucciones del nucleo 0 -- ");
-        imprimirCacheInstrucciones(cacheInstruccionesNucleo0);
+        /*System.out.println(" -- Cache de instrucciones del nucleo 0 -- ");
+        imprimirCacheInstrucciones(cacheInstruccionesNucleo0);*/
         System.out.println(" -- Cache de datos del nucleo 1 -- ");
         imprimirCacheDatos(cacheDatosNucleo1);
-        System.out.println(" -- Cache de instrucciones del nucleo 1 -- ");
-        imprimirCacheInstrucciones(cacheInstruccionesNucleo1);
+        /*System.out.println(" -- Cache de instrucciones del nucleo 1 -- ");
+        imprimirCacheInstrucciones(cacheInstruccionesNucleo1);*/
         imprimirContextos();
     }
 

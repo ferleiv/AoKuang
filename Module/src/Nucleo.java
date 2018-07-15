@@ -259,14 +259,15 @@ public class Nucleo extends Thread
         }
         ResultadoFalloCahe resultado = new ResultadoFalloCahe();
         if(MainThread.busDatos){ //Bus de datos disponible
-            MainThread.busDatos =false; //Lo marca ocupado
-            if(miCache.get(posicionEnCache).getEstado()==1){ //1 es modificado
+            MainThread.busDatos = false; //Lo marca ocupado
+            if(miCache.get(posicionEnCache).getEstado() == 1){ //1 es modificado
                 guardarBloqueEnMemoria(miCache.get(posicionEnCache).getEtiqueta(), true);
             }
             try{ //Intenta bloquear la posicion en la otra cache
                 semaphoreOtroCache.acquire();
-                if(otroCache.get(posicionEnCache).getEtiqueta()==bloque && otroCache.get(posicionEnCache).getEstado()==1/*asumiendo que estado 1 es modificado*/){
+                if(otroCache.get(posicionEnCache).getEtiqueta()==bloque && otroCache.get(posicionEnCache).getEstado() == 1/*estado 1 es modificado*/){
                     guardarBloqueEnMemoria(otroCache.get(posicionEnCache).getEtiqueta(),false);
+                    otroCache.get(posicionEnCache).setEtiqueta(0);
                 }
             }
             catch(InterruptedException e){resultado.setSeLogro(false);}finally {semaphoreOtroCache.release();}
@@ -287,15 +288,25 @@ public class Nucleo extends Thread
         int num_palabra = ( dir_mem - ( num_bloque * 16 ) ) / 4;
         boolean pudoRealizarse = true;
         BloqueCacheDatos target = verifyCacheDatos( pos_cache, num_bloque, numNucleo);
-        if (target.getEtiqueta() == -1 || target.getEstado() != 1 ) {//1 es modificado
+        if (target.getEtiqueta() == -1 || target.getEstado() == 2 ) {//2 es invalido
             pudoRealizarse = falloCacheSw(num_bloque, num_palabra, pos_cache);
+            target = verifyCacheDatos( pos_cache, num_bloque, numNucleo);
         }
         if(pudoRealizarse){
+            if (target.getEtiqueta() != 1){
+                try{ //Intenta bloquear la posicion en la otra cache
+                    semaphoreOtroCache.acquire();
+                    if(otroCache.get(pos_cache).getEtiqueta() == num_bloque && otroCache.get(pos_cache).getEstado() == 0){
+                        otroCache.get(pos_cache).setEstado(2);
+                    }
+                }
+                catch(InterruptedException e){}finally {semaphoreOtroCache.release();}
+            }
             int[] palabras = target.getPalabras();
             palabras[num_palabra] = context.getRegistro(rf);
             target.setPalabras(palabras);
             target.setEstado(1); //Lo marca modificado
-        }else context.setPC(context.getPC()-4);
+        } else context.setPC(context.getPC()-4);
     }
 
     //Caso de fallo de cache en un SW
@@ -304,7 +315,7 @@ public class Nucleo extends Thread
         quantum += 40;
         boolean resultado=false;
         if(MainThread.busDatos){ //Si el bus de datos esta desocupado
-            MainThread.busDatos =false; //Lo ocupa
+            MainThread.busDatos = false; //Lo ocupa
             if(miCache.get(posicionEnCache).getEstado()==1){//1 es modificado
                 guardarBloqueEnMemoria(miCache.get(posicionEnCache).getEtiqueta(), true);
             }
@@ -319,6 +330,7 @@ public class Nucleo extends Thread
             catch(InterruptedException e){}finally {semaphoreOtroCache.release();}
             resultado=true;
         }
+        copiarBloqueDesdeMemoria(bloque);
         MainThread.busDatos =true; //Desocupado el bus
         return resultado;
     }
@@ -338,13 +350,8 @@ public class Nucleo extends Thread
         if(esMiCache) {
             palabras = miCache.get(posicionBloqueCache).getPalabras();
             miCache.get(posicionBloqueCache).setEstado(0);//0 es compartido
-            if(otroCache.get(posicionBloqueCache).getEtiqueta()==bloque)
-                otroCache.get(posicionBloqueCache).setEstado(2);//2 es invalido
         }else{
             palabras = otroCache.get(posicionBloqueCache).getPalabras();
-            otroCache.get(posicionBloqueCache).setEstado(0);//0 es compartido
-            if(miCache.get(posicionBloqueCache).getEtiqueta()==bloque)
-                miCache.get(posicionBloqueCache).setEstado(2);//2 es invalido
         }
         for(int i = 0; i < 4; i++) { //Escribe el bloque en memoria
             memoriaPrincipalDatos[posicionBloqueMemoria] = palabras[0];
