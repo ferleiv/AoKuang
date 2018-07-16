@@ -231,7 +231,7 @@ public class Nucleo extends Thread
 
     //Jump Register
     private void jr(int[] ir){
-        context.setPC(ir[1]);
+        context.setPC(context.getRegistro(ir[1]));
     }
 
     //Resolver un load
@@ -274,7 +274,7 @@ public class Nucleo extends Thread
                 semaphoreOtroCache.acquire();
                 if(otroCache.get(posicionEnCache).getEtiqueta()==bloque && otroCache.get(posicionEnCache).getEstado() == 1/*estado 1 es modificado*/){
                     guardarBloqueEnMemoria(otroCache.get(posicionEnCache).getEtiqueta(),false);
-                    otroCache.get(posicionEnCache).setEtiqueta(0);
+                    otroCache.get(posicionEnCache).setEstado(0);
                 }
             }
             catch(InterruptedException e){resultado.setSeLogro(false);}finally {semaphoreOtroCache.release();}
@@ -294,14 +294,21 @@ public class Nucleo extends Thread
         int pos_cache = num_bloque % 4; //Bloque en cache
         int num_palabra = ( dir_mem - ( num_bloque * 16 ) ) / 4;
         boolean pudoRealizarse = true;
+        boolean fallo = false;
         BloqueCacheDatos target = verifyCacheDatos( pos_cache, num_bloque, numNucleo);
         if (target.getEtiqueta() == -1 || target.getEstado() == 2 ) {//2 es invalido
             pudoRealizarse = falloCacheSw(num_bloque, num_palabra, pos_cache);
             target = verifyCacheDatos( pos_cache, num_bloque, numNucleo);
+            fallo = true;
         }
         if(pudoRealizarse){
-            if (target.getEtiqueta() != 1){
+            if (target.getEstado() != 1 && fallo == false){
                 try{ //Intenta bloquear la posicion en la otra cache
+                    if(numNucleo == 0){ //Asigna los semaforos respectivamente segun sea el nucleo 0 o 1
+                        semaphoreOtroCache=MainThread.candadosN1[pos_cache];
+                    }else {
+                        semaphoreOtroCache=MainThread.candadosN0[pos_cache];
+                    }
                     semaphoreOtroCache.acquire();
                     if(otroCache.get(pos_cache).getEtiqueta() == num_bloque && otroCache.get(pos_cache).getEstado() == 0){
                         otroCache.get(pos_cache).setEstado(2);
@@ -327,6 +334,11 @@ public class Nucleo extends Thread
                 guardarBloqueEnMemoria(miCache.get(posicionEnCache).getEtiqueta(), true);
             }
             try{ //Intenta bloquear la posicion en la otra cache
+                if(numNucleo == 0){ //Asigna los semaforos respectivamente segun sea el nucleo 0 o 1
+                    semaphoreOtroCache=MainThread.candadosN1[posicionEnCache];
+                }else {
+                    semaphoreOtroCache=MainThread.candadosN0[posicionEnCache];
+                }
                 semaphoreOtroCache.acquire();
                 if(otroCache.get(posicionEnCache).getEtiqueta()==bloque){
                     if(otroCache.get(posicionEnCache).getEstado()==1)//1 es modificado
@@ -344,7 +356,7 @@ public class Nucleo extends Thread
 
     private BloqueCacheDatos verifyCacheDatos( int posicion, int numBloque, int idNucleo ){
         BloqueCacheDatos invalid = new BloqueCacheDatos();
-        BloqueCacheDatos target = idNucleo == 0 ? miCache.get(posicion) : otroCache.get(posicion);
+        BloqueCacheDatos target = miCache.get(posicion);
         if ( target.getEtiqueta() == numBloque ) return target;
         return invalid;
     }
