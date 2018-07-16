@@ -243,7 +243,12 @@ public class MainThread
                     + palabrasDatos[1] + " | "
                     + palabrasDatos[2] + " | "
                     + palabrasDatos[3] + " | "; //Arma el string del renglon de este bloque
-            System.out.println(bloque + bloqueDatosAux.getEtiqueta() + " | " + bloqueDatosAux.getEstado() + " |");
+            int estado = bloqueDatosAux.getEstado();
+            String estado_final = "";
+            if ( estado == 0 ) { estado_final = "C"; }
+            else if ( estado == 1 ) { estado_final = "M"; }
+            else estado_final = "I";
+            System.out.println(bloque + bloqueDatosAux.getEtiqueta() + " | " + estado_final + " |");
         }
     }
 
